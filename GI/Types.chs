@@ -1,6 +1,8 @@
 module GI.Types
   (
-    CallableInfo(..)
+    BaseInfo(..)
+  , BaseInfoClass(..)
+  , CallableInfo(..)
   , CallableInfoClass(..)
   , FunctionInfo(..)
   , FunctionInfoClass(..)
