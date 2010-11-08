@@ -9,10 +9,7 @@ import System.Glib.GError
 
 main = handleGError (\(GError dom code msg) -> print (dom, code, msg)) $ do
     initGUI
-    tp <- repositoryRequire "TelepathyGLib"
-    repositoryLoad tp
-    n <- repositoryGetNInfos "TelepathyGLib"
-    forM_ [0..n-1] $ \i -> do
-        putStrLn =<< baseInfoGetName =<< repositoryGetInfo "TelepathyGLib" i
-
+    tp <- load "TelepathyGLib" Nothing
+    infos <- getInfos tp
+    forM_ infos $ \info -> print (baseInfoName info, baseInfoType info)
 
