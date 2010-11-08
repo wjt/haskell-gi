@@ -2,6 +2,7 @@ module GI.BaseInfo
   ( baseInfoName
   , baseInfoNamespace
   , baseInfoType
+  , InfoType(..)
   )
 where
 

@@ -50,7 +50,12 @@ Cabal-version:       >=1.2
 
 Executable lol
   main-is: Main.hs
-  other-modules: GI.Types, GI.Typelib, GI.BaseInfo, GI.Util
+  other-modules:
+      GI.Types,
+      GI.Typelib,
+      GI.BaseInfo,
+      GI.TypeInfo,
+      GI.Util
   pkgconfig-depends: gobject-introspection-1.0
   extensions:        ForeignFunctionInterface
   build-depends: base >= 4, gtk, glib
