@@ -34,12 +34,15 @@ module GI.Types
   , PropertyInfoClass(..)
   , TypeInfo(..)
   , TypeInfoClass(..)
+  , Argument(..)
   )
 where
 
 import Foreign
 
 #include <girepository.h>
+
+{# pointer *GIArgument as Argument newtype #}
 
 {# pointer *GIBaseInfo as BaseInfo newtype #}
 {# class BaseInfoClass BaseInfo #}
