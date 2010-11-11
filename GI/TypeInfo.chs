@@ -2,15 +2,15 @@
 module GI.TypeInfo
     ( TypeTag(..)
     , typeInfoIsPointer
-    , typeInfoGetTag
-    , typeInfoGetParamType
-    , typeInfoGetInterface
-    , typeInfoGetArrayLength
-    , typeInfoGetArrayFixedSize
+    , typeInfoTag
+    , typeInfoParamType
+    , typeInfoInterface
+    , typeInfoArrayLength
+    , typeInfoArrayFixedSize
     , typeInfoIsZeroTerminated
-    , typeInfoGetNErrorDomains
-    , typeInfoGetErrorDomain
-    , typeInfoGetArrayType
+    , typeInfoNErrorDomains
+    , typeInfoErrorDomain
+    , typeInfoArrayType
     , typeTagToString
     )
 where
@@ -38,40 +38,40 @@ typeInfoIsPointer :: TypeInfoClass tic => tic -> Bool
 typeInfoIsPointer ti = unsafePerformIO $
     (== 0) <$> {# call is_pointer #} (stupidCast ti)
 
-typeInfoGetTag :: TypeInfoClass tic => tic -> TypeTag
-typeInfoGetTag ti = unsafePerformIO $ toEnum . fromIntegral <$>
+typeInfoTag :: TypeInfoClass tic => tic -> TypeTag
+typeInfoTag ti = unsafePerformIO $ toEnum . fromIntegral <$>
     {# call get_tag #} (stupidCast ti)
 
-typeInfoGetParamType :: TypeInfoClass tic => tic -> Int -> TypeInfo
-typeInfoGetParamType ti n = unsafePerformIO $ TypeInfo <$> castPtr <$>
+typeInfoParamType :: TypeInfoClass tic => tic -> Int -> TypeInfo
+typeInfoParamType ti n = unsafePerformIO $ TypeInfo <$> castPtr <$>
     {# call get_param_type #} (stupidCast ti) (fromIntegral n)
 
-typeInfoGetInterface :: TypeInfoClass tic => tic -> BaseInfo
-typeInfoGetInterface ti = unsafePerformIO $ baseInfo <$>
+typeInfoInterface :: TypeInfoClass tic => tic -> BaseInfo
+typeInfoInterface ti = unsafePerformIO $ baseInfo <$>
     {# call get_interface #} (stupidCast ti)
 
-typeInfoGetArrayLength :: TypeInfoClass tic => tic -> Int
-typeInfoGetArrayLength ti = unsafePerformIO $ fromIntegral <$>
+typeInfoArrayLength :: TypeInfoClass tic => tic -> Int
+typeInfoArrayLength ti = unsafePerformIO $ fromIntegral <$>
     {# call get_array_length #} (stupidCast ti)
 
-typeInfoGetArrayFixedSize :: TypeInfoClass tic => tic -> Int
-typeInfoGetArrayFixedSize ti = unsafePerformIO $ fromIntegral <$>
+typeInfoArrayFixedSize :: TypeInfoClass tic => tic -> Int
+typeInfoArrayFixedSize ti = unsafePerformIO $ fromIntegral <$>
     {# call get_array_fixed_size #} (stupidCast ti)
 
 typeInfoIsZeroTerminated :: TypeInfoClass tic => tic -> Bool
 typeInfoIsZeroTerminated ti = unsafePerformIO $ (== 0) <$>
     {# call is_zero_terminated #} (stupidCast ti)
 
-typeInfoGetNErrorDomains :: TypeInfoClass tic => tic -> Int
-typeInfoGetNErrorDomains ti = unsafePerformIO $ fromIntegral <$>
+typeInfoNErrorDomains :: TypeInfoClass tic => tic -> Int
+typeInfoNErrorDomains ti = unsafePerformIO $ fromIntegral <$>
     {# call get_n_error_domains #} (stupidCast ti)
 
-typeInfoGetErrorDomain :: TypeInfoClass tic => tic -> Int -> ErrorDomainInfo
-typeInfoGetErrorDomain ti n = unsafePerformIO $ ErrorDomainInfo <$> castPtr <$>
+typeInfoErrorDomain :: TypeInfoClass tic => tic -> Int -> ErrorDomainInfo
+typeInfoErrorDomain ti n = unsafePerformIO $ ErrorDomainInfo <$> castPtr <$>
     {# call get_error_domain #} (stupidCast ti) (fromIntegral n)
 
-typeInfoGetArrayType :: TypeInfoClass tic => tic -> ArrayType
-typeInfoGetArrayType ti = unsafePerformIO $ toEnum <$> fromIntegral <$>
+typeInfoArrayType :: TypeInfoClass tic => tic -> ArrayType
+typeInfoArrayType ti = unsafePerformIO $ toEnum <$> fromIntegral <$>
     {# call get_array_type #} (stupidCast ti)
 
 typeTagToString :: TypeTag -> String
