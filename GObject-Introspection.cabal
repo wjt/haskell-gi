@@ -54,6 +54,7 @@ Executable lol
       GI.Types,
       GI.Typelib,
       GI.BaseInfo,
+      GI.ConstantInfo,
       GI.TypeInfo,
       GI.Util
   pkgconfig-depends: gobject-introspection-1.0
