@@ -23,8 +23,8 @@ import Control.Applicative ((<$>))
 -- Because all the C types are synonyms, c2hs picks the last one...
 stupidCast :: BaseInfoClass base
            => base
-           -> TypeInfo
-stupidCast base = TypeInfo (castPtr p)
+           -> ValueInfo
+stupidCast base = ValueInfo (castPtr p)
   where
     (BaseInfo p) = baseInfo base
 

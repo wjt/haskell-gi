@@ -34,6 +34,8 @@ module GI.Types
   , PropertyInfoClass(..)
   , TypeInfo(..)
   , TypeInfoClass(..)
+  , ValueInfo(..)
+  , ValueInfoClass(..)
   , Argument(..)
   )
 where
@@ -166,4 +168,10 @@ instance BaseInfoClass PropertyInfo where
 instance BaseInfoClass TypeInfo where
   baseInfo (TypeInfo p) = BaseInfo (castPtr p)
   fromBaseInfo (BaseInfo p) = TypeInfo (castPtr p)
+
+{# pointer *GIValueInfo as ValueInfo newtype #}
+{# class ValueInfoClass ValueInfo #}
+instance BaseInfoClass ValueInfo where
+  baseInfo (ValueInfo p) = BaseInfo (castPtr p)
+  fromBaseInfo (BaseInfo p) = ValueInfo (castPtr p)
 
