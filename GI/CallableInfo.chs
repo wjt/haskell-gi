@@ -4,12 +4,11 @@ module GI.CallableInfo
     , callableInfoCallerOwns
     , callableInfoMayReturnNull
     , callableInfoReturnAttributes
-    , callableInfoNArgs
-    , callableInfoArg
+    , callableInfoArgs
     ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (join)
+import Control.Monad (forM)
 import Data.Word (Word64)
 import Foreign
 import Foreign.C
@@ -54,11 +53,10 @@ callableInfoReturnAttributes ci = unsafePerformIO $ do
                       value' <- peekCString =<< peek value
                       loop iter ((name', value') : acc)
 
-callableInfoNArgs :: CallableInfoClass call => call -> Int
-callableInfoNArgs ci = unsafePerformIO $ fromIntegral <$>
-    {# call get_n_args #} (stupidCast ci)
-
-callableInfoArg :: CallableInfoClass call => call -> Int -> ArgInfo
-callableInfoArg ci n = unsafePerformIO $ ArgInfo <$> castPtr <$>
-    {# call get_arg #} (stupidCast ci) (fromIntegral n)
+callableInfoArgs :: CallableInfoClass call => call -> [ArgInfo]
+callableInfoArgs ci = unsafePerformIO $ do
+    n <- fromIntegral <$> {# call get_n_args #} (stupidCast ci)
+    forM [0..n - 1] $ \i ->
+        ArgInfo <$> castPtr <$>
+            {# call get_arg #} (stupidCast ci) (fromIntegral i)
 
