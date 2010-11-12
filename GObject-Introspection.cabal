@@ -51,6 +51,7 @@ Cabal-version:       >=1.2
 Executable lol
   main-is: Main.hs
   other-modules:
+      GI.Types,
       GI.ArgInfo,
       GI.BaseInfo,
       GI.CallableInfo,
@@ -59,7 +60,6 @@ Executable lol
       GI.Info,
       GI.TypeInfo,
       GI.Typelib,
-      GI.Types,
       GI.Util,
       GI.Value
   pkgconfig-depends: gobject-introspection-1.0
