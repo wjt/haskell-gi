@@ -1,5 +1,5 @@
 
-module GI.Info (Info(..), dumpInfo) where
+module GI.API (API(..), dumpAPI) where
 
 import Control.Applicative ((<$>))
 import Control.Monad (forM_)
@@ -33,17 +33,6 @@ data Callable = Callable {
     args :: [Arg] }
     deriving Show
 
-data Info
-    = Enum { name :: String, values :: [(String, Word64)] }
-    | Const { name :: String, value :: Value }
-    | Object {
-        name :: String,
-        methods :: [Callable],
-        signals :: [Callable],
-        properties :: [String] }
-    | Function Callable
-    deriving Show
-
 toCallable :: CallableInfo -> Callable
 toCallable ci =
     let returnType = callableInfoReturnType ci
@@ -61,8 +50,46 @@ toCallable ci =
                     (argInfoOwnershipTransfer ai)
                    | ai <- ais]
 
-toInfo :: BaseInfoClass bi => bi -> [Info]
-toInfo i = toInfo' (baseInfoType i)
+data Function = Function
+    deriving Show
+
+toFunction :: FunctionInfo -> Function
+toFunction fi = error "fixme"
+
+data Signal = Signal
+    deriving Show
+
+toSignal :: SignalInfo -> Signal
+toSignal si = error "fixme"
+
+data Interface = Interface {
+    ifName :: String,
+    ifMethods :: [Function] }
+    deriving Show
+
+toInterface :: InterfaceInfo -> Interface
+toInterface ii = error "fixme"
+
+data Object = Object {
+    objName :: String,
+    objMethods :: [Function],
+    objSignals :: [Signal],
+    objProperties :: [String] }
+    deriving Show
+
+toObject :: ObjectInfo -> Object
+toObject oi = error "fixme"
+
+data API
+    = APIEnum { name :: String, values :: [(String, Word64)] }
+    | APIConst { name :: String, value :: Value }
+    | APIObject Object
+    -- XXX
+    | APIFunction Callable
+    deriving Show
+
+toAPI :: BaseInfoClass bi => bi -> [API]
+toAPI i = toInfo' (baseInfoType i)
     where
 
     name = baseInfoName i
@@ -74,7 +101,7 @@ toInfo i = toInfo' (baseInfoType i)
             typeInfo = constantInfoType ci
             arg = constantInfoValue ci
             value = fromArgument typeInfo arg
-         in [Const name value]
+         in [APIConst name value]
 
     toInfo' InfoTypeEnum =
         let ei = fromBaseInfo (baseInfo i) :: EnumInfo
@@ -82,26 +109,24 @@ toInfo i = toInfo' (baseInfoType i)
             vis = map (enumInfoValue ei) [0..n - 1]
             names = map (baseInfoName . baseInfo) vis
             values = map valueInfoValue vis
-         in [Enum name (zip names values)]
+         in [APIEnum name (zip names values)]
 
     toInfo' InfoTypeFunction =
         let ci = fromBaseInfo (baseInfo i) :: CallableInfo
-         in [Function $ toCallable ci]
+         in [APIFunction $ toCallable ci]
 
+    -- toInfo' InfoTypeSignal = 
     -- toInfo' InfoTypeObject = 
-    -- toInfo' InfoTypeStruct = 
+    -- toInfo' InfoTypeInterface = 
 
     toInfo' _ = []
 
-dumpInfo name = do
+dumpAPI name = do
     lib <- load name Nothing
     infos <- getInfos lib
-    let infos' = map toInfo infos
-    -- forM_ infos $ \info -> print (baseInfoName info, baseInfoType info)
-    -- mapM_ print infos
-    -- print $ (toEnum 0 :: TypeTag)
-    forM_ (zip infos infos') $ \(i, i') -> do
-        print (baseInfoType i, baseInfoName i)
-        print i'
+    let apis = map toAPI infos
+    forM_ (zip infos apis) $ \(info, api) -> do
+        print (baseInfoType info, baseInfoName info)
+        print api
         putStrLn ""
 

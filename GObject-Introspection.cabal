@@ -59,7 +59,7 @@ Executable lol
       GI.Internal.EnumInfo,
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
-      GI.Info,
+      GI.API,
       GI.Util,
       GI.Value
   pkgconfig-depends: gobject-introspection-1.0
