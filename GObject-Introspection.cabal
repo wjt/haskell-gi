@@ -52,13 +52,13 @@ Executable lol
   main-is: Main.hs
   other-modules:
       GI.ArgInfo,
-      GI.Types,
-      GI.Typelib,
       GI.BaseInfo,
       GI.CallableInfo,
       GI.ConstantInfo,
       GI.EnumInfo,
       GI.TypeInfo,
+      GI.Typelib,
+      GI.Types,
       GI.Util
   pkgconfig-depends: gobject-introspection-1.0
   extensions:        ForeignFunctionInterface
