@@ -37,6 +37,7 @@ module GI.Types
   , ValueInfo(..)
   , ValueInfoClass(..)
   , Argument(..)
+  , AttributeIter(..)
   )
 where
 
@@ -45,6 +46,7 @@ import Foreign
 #include <girepository.h>
 
 {# pointer *GIArgument as Argument newtype #}
+{# pointer *GIAttributeIter as AttributeIter newtype #}
 
 {# pointer *GIBaseInfo as BaseInfo newtype #}
 {# class BaseInfoClass BaseInfo #}
