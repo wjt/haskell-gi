@@ -56,10 +56,12 @@ Executable lol
       GI.CallableInfo,
       GI.ConstantInfo,
       GI.EnumInfo,
+      GI.Info,
       GI.TypeInfo,
       GI.Typelib,
       GI.Types,
-      GI.Util
+      GI.Util,
+      GI.Value
   pkgconfig-depends: gobject-introspection-1.0
   extensions:        ForeignFunctionInterface
   build-depends: base >= 4, gtk, glib
