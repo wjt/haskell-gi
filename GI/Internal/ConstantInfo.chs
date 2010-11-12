@@ -1,5 +1,5 @@
 
-module GI.ConstantInfo
+module GI.Internal.ConstantInfo
     ( constantInfoType
     , constantInfoValue
     )
@@ -9,7 +9,7 @@ import Control.Applicative ((<$>))
 import Foreign
 import Foreign.C
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 

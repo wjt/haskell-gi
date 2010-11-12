@@ -13,9 +13,9 @@ import Data.Word
 import Foreign
 import Foreign.C
 
-import GI.BaseInfo
-import GI.Types
-import GI.TypeInfo
+import GI.Internal.BaseInfo
+import GI.Internal.TypeInfo
+import GI.Internal.Types
 
 #include <girepository.h>
 

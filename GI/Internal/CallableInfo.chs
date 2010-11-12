@@ -1,5 +1,5 @@
 
-module GI.CallableInfo
+module GI.Internal.CallableInfo
     ( callableInfoReturnType
     , callableInfoCallerOwns
     , callableInfoMayReturnNull
@@ -13,9 +13,9 @@ import Data.Word (Word64)
 import Foreign
 import Foreign.C
 
-import GI.ArgInfo
+import GI.Internal.ArgInfo
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 

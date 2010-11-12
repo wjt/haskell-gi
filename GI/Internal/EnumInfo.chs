@@ -1,5 +1,5 @@
 
-module GI.EnumInfo
+module GI.Internal.EnumInfo
     ( enumInfoNValues
     , enumInfoValue
     , valueInfoValue
@@ -10,7 +10,7 @@ import Data.Word (Word64)
 import Foreign
 import Foreign.C
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 

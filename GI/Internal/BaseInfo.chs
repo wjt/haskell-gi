@@ -1,4 +1,4 @@
-module GI.BaseInfo
+module GI.Internal.BaseInfo
   ( baseInfoName
   , baseInfoNamespace
   , baseInfoType
@@ -12,7 +12,7 @@ import Foreign.C.String
 
 import Control.Applicative ((<$>))
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 

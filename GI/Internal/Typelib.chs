@@ -1,4 +1,4 @@
-module GI.Typelib
+module GI.Internal.Typelib
   ( getSearchPath
 
   , load
@@ -15,9 +15,9 @@ import Control.Monad (when, forM)
 import System.Glib.GError
 import System.Glib.GList
 
-import GI.Types
+import GI.Internal.BaseInfo
+import GI.Internal.Types
 import GI.Util
-import GI.BaseInfo
 
 #include <girepository.h>
 

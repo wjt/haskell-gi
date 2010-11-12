@@ -1,4 +1,4 @@
-module GI.Types
+module GI.Internal.Types
   (
     BaseInfo(..)
   , BaseInfoClass(..)

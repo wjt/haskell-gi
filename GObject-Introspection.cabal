@@ -51,20 +51,21 @@ Cabal-version:       >=1.2
 Executable lol
   main-is: Main.hs
   other-modules:
-      GI.Types,
-      GI.ArgInfo,
-      GI.BaseInfo,
-      GI.CallableInfo,
-      GI.ConstantInfo,
-      GI.EnumInfo,
+      GI.Internal.Types,
+      GI.Internal.ArgInfo,
+      GI.Internal.BaseInfo,
+      GI.Internal.CallableInfo,
+      GI.Internal.ConstantInfo,
+      GI.Internal.EnumInfo,
+      GI.Internal.TypeInfo,
+      GI.Internal.Typelib,
       GI.Info,
-      GI.TypeInfo,
-      GI.Typelib,
       GI.Util,
       GI.Value
   pkgconfig-depends: gobject-introspection-1.0
   extensions:        ForeignFunctionInterface
   build-depends: base >= 4, gtk, glib
+  build-tools: hsc2hs
   
   -- Modules not exported by this package.
   -- Other-modules:       

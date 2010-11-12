@@ -1,5 +1,5 @@
 
-module GI.TypeInfo
+module GI.Internal.TypeInfo
     ( TypeTag(..)
     , typeInfoIsPointer
     , typeInfoTag
@@ -20,7 +20,7 @@ import Foreign.C
 
 import Control.Applicative ((<$>))
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 

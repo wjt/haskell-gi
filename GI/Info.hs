@@ -5,14 +5,15 @@ import Control.Applicative ((<$>))
 import Control.Monad (forM_)
 import Data.Int
 import Data.Word
-import GI.ArgInfo
-import GI.BaseInfo
-import GI.CallableInfo
-import GI.ConstantInfo
-import GI.EnumInfo
-import GI.TypeInfo
-import GI.Types
-import GI.Typelib (getInfos, load)
+
+import GI.Internal.Types
+import GI.Internal.ArgInfo
+import GI.Internal.BaseInfo
+import GI.Internal.CallableInfo
+import GI.Internal.ConstantInfo
+import GI.Internal.EnumInfo
+import GI.Internal.TypeInfo
+import GI.Internal.Typelib (getInfos, load)
 import GI.Value
 
 data Arg = Arg {

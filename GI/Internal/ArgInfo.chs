@@ -1,5 +1,5 @@
 
-module GI.ArgInfo
+module GI.Internal.ArgInfo
     ( Direction(..)
     , Scope(..)
     , Transfer(..)
@@ -18,7 +18,7 @@ import Data.Word (Word64)
 import Foreign
 import Foreign.C
 
-{# import GI.Types #}
+{# import GI.Internal.Types #}
 
 #include <girepository.h>
 
