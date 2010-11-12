@@ -12,6 +12,7 @@ import GI.Internal.BaseInfo
 import GI.Internal.CallableInfo
 import GI.Internal.ConstantInfo
 import GI.Internal.EnumInfo
+import GI.Internal.FunctionInfo
 import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
 import GI.Value
@@ -50,11 +51,15 @@ toCallable ci =
                     (argInfoOwnershipTransfer ai)
                    | ai <- ais]
 
-data Function = Function
+data Function = Function {
+    fnSymbol :: String,
+    fnCallable :: Callable }
     deriving Show
 
 toFunction :: FunctionInfo -> Function
-toFunction fi = error "fixme"
+toFunction fi =
+     let ci = fromBaseInfo (baseInfo fi) :: CallableInfo
+      in Function (functionInfoSymbol fi) (toCallable ci)
 
 data Signal = Signal
     deriving Show
@@ -84,8 +89,7 @@ data API
     = APIEnum { name :: String, values :: [(String, Word64)] }
     | APIConst { name :: String, value :: Value }
     | APIObject Object
-    -- XXX
-    | APIFunction Callable
+    | APIFunction Function
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> [API]
@@ -112,8 +116,8 @@ toAPI i = toInfo' (baseInfoType i)
          in [APIEnum name (zip names values)]
 
     toInfo' InfoTypeFunction =
-        let ci = fromBaseInfo (baseInfo i) :: CallableInfo
-         in [APIFunction $ toCallable ci]
+        let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
+         in [APIFunction $ toFunction fi]
 
     -- toInfo' InfoTypeSignal = 
     -- toInfo' InfoTypeObject = 
