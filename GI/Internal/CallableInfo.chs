@@ -14,6 +14,7 @@ import Foreign
 import Foreign.C
 
 import GI.Internal.ArgInfo
+import GI.Util (getList)
 
 {# import GI.Internal.Types #}
 
@@ -54,9 +55,6 @@ callableInfoReturnAttributes ci = unsafePerformIO $ do
                       loop iter ((name', value') : acc)
 
 callableInfoArgs :: CallableInfoClass call => call -> [ArgInfo]
-callableInfoArgs ci = unsafePerformIO $ do
-    n <- fromIntegral <$> {# call get_n_args #} (stupidCast ci)
-    forM [0..n - 1] $ \i ->
-        ArgInfo <$> castPtr <$>
-            {# call get_arg #} (stupidCast ci) (fromIntegral i)
+callableInfoArgs ci = unsafePerformIO $ map (ArgInfo <$> castPtr) <$>
+    getList {# call get_n_args #} {# call get_arg #} (stupidCast ci)
 

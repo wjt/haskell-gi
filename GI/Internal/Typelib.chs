@@ -40,10 +40,10 @@ getSearchPath = do
 getInfos :: Typelib -> IO [BaseInfo]
 getInfos typelib = do
     nsPtr <- {# call unsafe g_typelib_get_namespace #} typelib
-    n <- {# call unsafe get_n_infos #} nullRepository nsPtr
-    forM [0..n-1] $ \i -> do
-        ret <- {# call unsafe get_info #} nullRepository nsPtr (fromIntegral i)
-        return $ BaseInfo $ castPtr ret
+    map (BaseInfo <$> castPtr) <$> getList
+        ({# call unsafe get_n_infos #} nullRepository)
+        ({# call unsafe get_info #} nullRepository)
+        nsPtr
 
 load :: String -> Maybe String -> IO Typelib
 load namespace version =
