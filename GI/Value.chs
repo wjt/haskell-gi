@@ -78,7 +78,7 @@ typeFromTypeInfo ti =
 
     where tag = typeInfoTag ti
           p1 = typeFromTypeInfo $ typeInfoParamType ti 0
-          p2 = typeFromTypeInfo $ typeInfoParamType ti 0
+          p2 = typeFromTypeInfo $ typeInfoParamType ti 1
 
 fromArgument :: TypeInfo -> Argument -> Value
 fromArgument typeInfo (Argument arg) =
