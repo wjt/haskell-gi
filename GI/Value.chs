@@ -72,8 +72,9 @@ typeFromTypeInfo ti =
         else case tag of
                  TypeTagArray -> TArray p1
                  TypeTagGhash -> TGHash p1 p2
-                 -- TypeTagInterface -> TInterface (baseInfoName . baseInfo $ ti)
-                 TypeTagInterface -> TInterface (typeTagToString . typeInfoTag $ ti)
+                 -- TypeTagInterface -> TInterface (typeTagToString . typeInfoTag $ ti)
+                 TypeTagInterface -> TInterface $
+                     baseInfoName . baseInfo . typeInfoInterface $ ti
                  _ -> error $ "implement me: " ++ show tag
 
     where tag = typeInfoTag ti
