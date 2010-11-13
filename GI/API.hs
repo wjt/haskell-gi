@@ -12,9 +12,11 @@ import GI.Internal.BaseInfo
 import GI.Internal.CallableInfo
 import GI.Internal.ConstantInfo
 import GI.Internal.EnumInfo
+import GI.Internal.FieldInfo
 import GI.Internal.FunctionInfo
 import GI.Internal.InterfaceInfo
 import GI.Internal.PropertyInfo
+import GI.Internal.StructInfo
 import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
 import GI.Value
@@ -97,6 +99,28 @@ toProperty pi =
         (typeFromTypeInfo $ propertyInfoType pi)
         (propertyInfoFlags pi)
 
+data Field = Field {
+    fieldName :: String,
+    fieldType :: Type,
+    fieldFlags :: [FieldInfoFlag] }
+    deriving Show
+
+toField :: FieldInfo -> Field
+toField fi =
+    Field (baseInfoName . baseInfo $ fi)
+        (typeFromTypeInfo $ fieldInfoType fi)
+        (fieldInfoFlags fi)
+
+data Struct = Struct {
+    structName :: String,
+    fields :: [Field] }
+    deriving Show
+
+toStruct :: StructInfo -> Struct
+toStruct si =
+    Struct (baseInfoName . baseInfo $ si)
+        (map toField $ structInfoFields si)
+
 data Interface = Interface {
     ifName :: String,
     ifMethods :: [Function],
@@ -124,6 +148,7 @@ toObject oi = error "fixme"
 data API
     = APIEnum { name :: String, values :: [(String, Word64)] }
     | APIConst Constant
+    | APIStruct Struct
     | APIObject Object
     | APIFunction Function
     | APIInterface Interface
@@ -151,6 +176,10 @@ toAPI i = toInfo' (baseInfoType i)
     toInfo' InfoTypeFunction =
         let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
          in [APIFunction $ toFunction fi]
+
+    toInfo' InfoTypeStruct =
+        let si = fromBaseInfo (baseInfo i) :: StructInfo
+         in [APIStruct $ toStruct si]
 
     -- toInfo' InfoTypeSignal = 
     -- toInfo' InfoTypeObject = 
