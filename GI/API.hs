@@ -121,6 +121,9 @@ toStruct si =
     Struct (baseInfoName . baseInfo $ si)
         (map toField $ structInfoFields si)
 
+data Callback = Callback Callable
+    deriving Show
+
 data Interface = Interface {
     ifName :: String,
     ifMethods :: [Function],
@@ -149,6 +152,7 @@ data API
     = APIEnum { name :: String, values :: [(String, Word64)] }
     | APIConst Constant
     | APIStruct Struct
+    | APICallback Callback
     | APIObject Object
     | APIFunction Function
     | APIInterface Interface
@@ -176,6 +180,10 @@ toAPI i = toInfo' (baseInfoType i)
     toInfo' InfoTypeFunction =
         let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
          in [APIFunction $ toFunction fi]
+
+    toInfo' InfoTypeCallback =
+        let ci = fromBaseInfo (baseInfo i) :: CallableInfo
+         in [APICallback $ Callback $ toCallable ci]
 
     toInfo' InfoTypeStruct =
         let si = fromBaseInfo (baseInfo i) :: StructInfo
