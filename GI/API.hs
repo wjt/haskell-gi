@@ -122,8 +122,7 @@ toAPI i = toInfo' (baseInfoType i)
 
     toInfo' InfoTypeEnum =
         let ei = fromBaseInfo (baseInfo i) :: EnumInfo
-            n = enumInfoNValues ei
-            vis = map (enumInfoValue ei) [0..n - 1]
+            vis = enumInfoValues ei
             names = map (baseInfoName . baseInfo) vis
             values = map valueInfoValue vis
          in [APIEnum name (zip names values)]

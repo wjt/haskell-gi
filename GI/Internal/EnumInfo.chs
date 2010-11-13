@@ -1,7 +1,6 @@
 
 module GI.Internal.EnumInfo
-    ( enumInfoNValues
-    , enumInfoValue
+    ( enumInfoValues
     , valueInfoValue
     ) where
 
@@ -9,6 +8,8 @@ import Control.Applicative ((<$>))
 import Data.Word (Word64)
 import Foreign
 import Foreign.C
+
+import GI.Util (getList)
 
 {# import GI.Internal.Types #}
 
@@ -24,13 +25,9 @@ stupidValueCast :: ValueInfoClass val => val -> Ptr ()
 stupidValueCast val = castPtr p
     where (ValueInfo p) = valueInfo val
 
-enumInfoNValues :: EnumInfoClass enum => enum -> Int
-enumInfoNValues ei = unsafePerformIO $ fromIntegral <$>
-    {# call get_n_values #} (stupidEnumCast ei)
-
-enumInfoValue :: EnumInfoClass enum => enum -> Int -> ValueInfo
-enumInfoValue ei n = unsafePerformIO $ ValueInfo <$> castPtr <$>
-    {# call get_value #} (stupidEnumCast ei) (fromIntegral n)
+enumInfoValues :: EnumInfoClass enum => enum -> [ValueInfo]
+enumInfoValues ei = unsafePerformIO $ map (ValueInfo <$> castPtr) <$>
+    getList {# call get_n_values #} {# call get_value #} (stupidEnumCast ei)
 
 valueInfoValue :: ValueInfoClass val => val -> Word64
 valueInfoValue vi = unsafePerformIO $ fromIntegral <$>
