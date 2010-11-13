@@ -1,6 +1,7 @@
 
 module GI.Internal.FunctionInfo
     ( functionInfoSymbol
+    -- XXX: Write these.
     -- , functionInfoFlags,
     -- , functionInfoProperty
     -- , functionInfoVFunc
