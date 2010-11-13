@@ -149,13 +149,15 @@ toObject :: ObjectInfo -> Object
 toObject oi = error "fixme"
 
 data API
-    = APIEnum { name :: String, values :: [(String, Word64)] }
-    | APIConst Constant
-    | APIStruct Struct
-    | APICallback Callback
-    | APIObject Object
+    = APIConst Constant
     | APIFunction Function
+    | APICallback Callback
+    -- XXX: These plus APIUnion should have their gTypes exposed (via a
+    -- binding of GIRegisteredTypeInfo.
+    | APIEnum { name :: String, values :: [(String, Word64)] }
     | APIInterface Interface
+    | APIObject Object
+    | APIStruct Struct
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> [API]
