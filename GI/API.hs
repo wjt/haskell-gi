@@ -25,6 +25,14 @@ data Arg = Arg {
     transfer :: Transfer }
     deriving Show
 
+toArg :: ArgInfo -> Arg
+toArg ai =
+   Arg (baseInfoName . baseInfo $ ai)
+        (typeFromTypeInfo . argInfoType $ ai)
+        (argInfoDirection ai)
+        (argInfoScope ai)
+        (argInfoOwnershipTransfer ai)
+
 data Callable = Callable {
     callableName :: String,
     returnType :: Type,
@@ -44,12 +52,7 @@ toCallable ci =
                (callableInfoMayReturnNull ci)
                (callableInfoCallerOwns ci)
                (callableInfoReturnAttributes ci)
-               [Arg (baseInfoName . baseInfo $ ai)
-                    (typeFromTypeInfo . argInfoType $ ai)
-                    (argInfoDirection ai)
-                    (argInfoScope ai)
-                    (argInfoOwnershipTransfer ai)
-                   | ai <- ais]
+               (map toArg ais)
 
 data Function = Function {
     fnSymbol :: String,
