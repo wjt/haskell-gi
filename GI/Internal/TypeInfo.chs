@@ -46,8 +46,8 @@ typeInfoParamType :: TypeInfoClass tic => tic -> Int -> TypeInfo
 typeInfoParamType ti n = unsafePerformIO $ TypeInfo <$> castPtr <$>
     {# call get_param_type #} (stupidCast ti) (fromIntegral n)
 
-typeInfoInterface :: TypeInfoClass tic => tic -> BaseInfo
-typeInfoInterface ti = unsafePerformIO $ baseInfo <$>
+typeInfoInterface :: TypeInfoClass tic => tic -> InterfaceInfo
+typeInfoInterface ti = unsafePerformIO $ fromBaseInfo <$> baseInfo <$>
     {# call get_interface #} (stupidCast ti)
 
 typeInfoArrayLength :: TypeInfoClass tic => tic -> Int
