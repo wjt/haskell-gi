@@ -34,7 +34,7 @@ toConstant ci =
 
 data Arg = Arg {
     argName :: String,
-    type_ :: Type,
+    argType :: Type,
     direction :: Direction,
     scope :: Scope,
     transfer :: Transfer }
@@ -60,10 +60,10 @@ data Callable = Callable {
 toCallable :: CallableInfo -> Callable
 toCallable ci =
     let returnType = callableInfoReturnType ci
-        type_ = typeFromTypeInfo returnType
+        argType = typeFromTypeInfo returnType
         ais = callableInfoArgs ci
         name = baseInfoName . baseInfo $ ci
-        in Callable name type_
+        in Callable name argType
                (callableInfoMayReturnNull ci)
                (callableInfoCallerOwns ci)
                (callableInfoReturnAttributes ci)
