@@ -17,6 +17,19 @@ import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
 import GI.Value
 
+data Constant = Constant {
+    constName :: String,
+    constValue :: Value }
+    deriving Show
+
+toConstant :: ConstantInfo -> Constant
+toConstant ci =
+    let name = baseInfoName $ baseInfo ci
+        typeInfo = constantInfoType ci
+        arg = constantInfoValue ci
+        value = fromArgument typeInfo arg
+     in Constant name value
+
 data Arg = Arg {
     argName :: String,
     type_ :: Type,
@@ -90,7 +103,7 @@ toObject oi = error "fixme"
 
 data API
     = APIEnum { name :: String, values :: [(String, Word64)] }
-    | APIConst { name :: String, value :: Value }
+    | APIConst Constant
     | APIObject Object
     | APIFunction Function
     deriving Show
@@ -105,10 +118,7 @@ toAPI i = toInfo' (baseInfoType i)
 
     toInfo' InfoTypeConstant =
         let ci = fromBaseInfo (baseInfo i) :: ConstantInfo
-            typeInfo = constantInfoType ci
-            arg = constantInfoValue ci
-            value = fromArgument typeInfo arg
-         in [APIConst name value]
+         in [APIConst $ toConstant ci]
 
     toInfo' InfoTypeEnum =
         let ei = fromBaseInfo (baseInfo i) :: EnumInfo
