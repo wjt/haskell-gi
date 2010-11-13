@@ -58,6 +58,7 @@ Executable lol
       GI.Internal.ConstantInfo,
       GI.Internal.EnumInfo,
       GI.Internal.FunctionInfo,
+      GI.Internal.InterfaceInfo,
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
       GI.API,

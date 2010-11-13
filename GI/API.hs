@@ -13,6 +13,7 @@ import GI.Internal.CallableInfo
 import GI.Internal.ConstantInfo
 import GI.Internal.EnumInfo
 import GI.Internal.FunctionInfo
+import GI.Internal.InterfaceInfo
 import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
 import GI.Value
@@ -85,11 +86,15 @@ toSignal si = error "fixme"
 
 data Interface = Interface {
     ifName :: String,
-    ifMethods :: [Function] }
+    ifMethods :: [Function],
+    ifConstants :: [Constant] }
     deriving Show
 
 toInterface :: InterfaceInfo -> Interface
-toInterface ii = error "fixme"
+toInterface ii =
+    Interface (baseInfoName . baseInfo $ ii)
+        (map toFunction $ interfaceInfoMethods $ ii)
+        (map toConstant $ interfaceInfoConstants $ ii)
 
 data Object = Object {
     objName :: String,
@@ -106,6 +111,7 @@ data API
     | APIConst Constant
     | APIObject Object
     | APIFunction Function
+    | APIInterface Interface
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> [API]
@@ -133,7 +139,10 @@ toAPI i = toInfo' (baseInfoType i)
 
     -- toInfo' InfoTypeSignal = 
     -- toInfo' InfoTypeObject = 
-    -- toInfo' InfoTypeInterface = 
+
+    toInfo' InfoTypeInterface =
+        let ii = fromBaseInfo (baseInfo i) :: InterfaceInfo
+         in [APIInterface $ toInterface ii]
 
     toInfo' _ = []
 
