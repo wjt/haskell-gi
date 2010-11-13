@@ -1,8 +1,8 @@
 
 module GI.Internal.InterfaceInfo
-    ( interfaceInfoPrerequisites,
-    -- , interfaceInfoProperties
-    interfaceInfoMethods
+    ( interfaceInfoPrerequisites
+    , interfaceInfoProperties
+    , interfaceInfoMethods
     -- , interfaceInfoSignals
     -- , interfaceInfoVFuncs
     , interfaceInfoConstants
@@ -42,6 +42,12 @@ interfaceInfoConstants :: InterfaceInfoClass iic => iic -> [ConstantInfo]
 interfaceInfoConstants ii = unsafePerformIO $
     map (ConstantInfo <$> castPtr) <$>
     getList {# call get_n_constants #} {# call get_constant #} (stupidCast ii)
+
+interfaceInfoProperties :: InterfaceInfoClass iic => iic -> [PropertyInfo]
+interfaceInfoProperties ii = unsafePerformIO $
+    map (PropertyInfo <$> castPtr) <$>
+    getList {# call get_n_properties #} {# call get_property #}
+        (stupidCast ii)
 
 {-
 gint                g_interface_info_get_n_properties   (GIInterfaceInfo *info);

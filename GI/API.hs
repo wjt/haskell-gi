@@ -14,6 +14,7 @@ import GI.Internal.ConstantInfo
 import GI.Internal.EnumInfo
 import GI.Internal.FunctionInfo
 import GI.Internal.InterfaceInfo
+import GI.Internal.PropertyInfo
 import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
 import GI.Value
@@ -84,10 +85,23 @@ data Signal = Signal
 toSignal :: SignalInfo -> Signal
 toSignal si = error "fixme"
 
+data Property = Property {
+    propName :: String,
+    propType :: Type,
+    propFlags :: [ParamFlag] }
+    deriving Show
+
+toProperty :: PropertyInfo -> Property
+toProperty pi =
+    Property (baseInfoName $ baseInfo pi)
+        (typeFromTypeInfo $ propertyInfoType pi)
+        (propertyInfoFlags pi)
+
 data Interface = Interface {
     ifName :: String,
     ifMethods :: [Function],
-    ifConstants :: [Constant] }
+    ifConstants :: [Constant],
+    ifProperties :: [Property] }
     deriving Show
 
 toInterface :: InterfaceInfo -> Interface
@@ -95,6 +109,7 @@ toInterface ii =
     Interface (baseInfoName . baseInfo $ ii)
         (map toFunction $ interfaceInfoMethods $ ii)
         (map toConstant $ interfaceInfoConstants $ ii)
+        (map toProperty $ interfaceInfoProperties $ ii)
 
 data Object = Object {
     objName :: String,
