@@ -41,8 +41,8 @@ data Type
     = TBasicType BasicType
     | TArray Type
     | TInterface String
-    | TGList
-    | TGSList
+    | TGList Type
+    | TGSList Type
     | TGHash Type Type
     | TError
     deriving (Eq, Show)
@@ -71,10 +71,14 @@ typeFromTypeInfo ti =
         then TBasicType $ toEnum $ fromEnum tag
         else case tag of
                  TypeTagArray -> TArray p1
-                 TypeTagGhash -> TGHash p1 p2
                  -- TypeTagInterface -> TInterface (typeTagToString . typeInfoTag $ ti)
                  TypeTagInterface -> TInterface $
                      baseInfoName . baseInfo . typeInfoInterface $ ti
+                 TypeTagGlist -> TGList p1
+                 TypeTagGslist -> TGSList p1
+                 TypeTagGhash -> TGHash p1 p2
+                 -- XXX: Include more information.
+                 TypeTagError -> TError
                  _ -> error $ "implement me: " ++ show tag
 
     where tag = typeInfoTag ti
