@@ -60,6 +60,7 @@ Executable lol
       GI.Internal.FieldInfo,
       GI.Internal.FunctionInfo,
       GI.Internal.InterfaceInfo,
+      GI.Internal.ObjectInfo,
       GI.Internal.ParamFlag,
       GI.Internal.PropertyInfo,
       GI.Internal.StructInfo,

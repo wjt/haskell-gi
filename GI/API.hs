@@ -15,6 +15,7 @@ import GI.Internal.EnumInfo
 import GI.Internal.FieldInfo
 import GI.Internal.FunctionInfo
 import GI.Internal.InterfaceInfo
+import GI.Internal.ObjectInfo
 import GI.Internal.PropertyInfo
 import GI.Internal.StructInfo
 import GI.Internal.TypeInfo
@@ -140,13 +141,18 @@ toInterface ii =
 
 data Object = Object {
     objName :: String,
+    objFields :: [Field],
     objMethods :: [Function],
-    objSignals :: [Signal],
-    objProperties :: [String] }
+    -- objSignals :: [Signal],
+    objProperties :: [Property] }
     deriving Show
 
 toObject :: ObjectInfo -> Object
-toObject oi = error "fixme"
+toObject oi =
+    Object (baseInfoName . baseInfo $ oi)
+        (map toField $ objectInfoFields oi)
+        (map toFunction $ objectInfoMethods oi)
+        (map toProperty $ objectInfoProperties oi)
 
 data API
     = APIConst Constant
@@ -191,8 +197,9 @@ toAPI i = toInfo' (baseInfoType i)
         let si = fromBaseInfo (baseInfo i) :: StructInfo
          in [APIStruct $ toStruct si]
 
-    -- toInfo' InfoTypeSignal = 
-    -- toInfo' InfoTypeObject = 
+    toInfo' InfoTypeObject =
+        let oi = fromBaseInfo (baseInfo i) :: ObjectInfo
+         in [APIObject $ toObject oi]
 
     toInfo' InfoTypeInterface =
         let ii = fromBaseInfo (baseInfo i) :: InterfaceInfo
