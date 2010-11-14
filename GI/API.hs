@@ -166,53 +166,50 @@ data API
     | APIStruct Struct
     deriving Show
 
-toAPI :: BaseInfoClass bi => bi -> [API]
+toAPI :: BaseInfoClass bi => bi -> API
 toAPI i = toInfo' (baseInfoType i)
     where
 
-    name = baseInfoName i
-
-    toInfo' InfoTypeType = error "!?"
-
     toInfo' InfoTypeConstant =
         let ci = fromBaseInfo (baseInfo i) :: ConstantInfo
-         in [APIConst $ toConstant ci]
+         in APIConst $ toConstant ci
 
     toInfo' InfoTypeEnum =
-        let ei = fromBaseInfo (baseInfo i) :: EnumInfo
+        let name = baseInfoName i
+            ei = fromBaseInfo (baseInfo i) :: EnumInfo
             vis = enumInfoValues ei
             names = map (baseInfoName . baseInfo) vis
             values = map valueInfoValue vis
-         in [APIEnum name (zip names values)]
+         in APIEnum name (zip names values)
 
     toInfo' InfoTypeFunction =
         let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
-         in [APIFunction $ toFunction fi]
+         in APIFunction $ toFunction fi
 
     toInfo' InfoTypeCallback =
         let ci = fromBaseInfo (baseInfo i) :: CallableInfo
-         in [APICallback $ Callback $ toCallable ci]
+         in APICallback $ Callback $ toCallable ci
 
     toInfo' InfoTypeStruct =
         let si = fromBaseInfo (baseInfo i) :: StructInfo
-         in [APIStruct $ toStruct si]
+         in APIStruct $ toStruct si
 
     toInfo' InfoTypeObject =
         let oi = fromBaseInfo (baseInfo i) :: ObjectInfo
-         in [APIObject $ toObject oi]
+         in APIObject $ toObject oi
 
     toInfo' InfoTypeInterface =
         let ii = fromBaseInfo (baseInfo i) :: InterfaceInfo
-         in [APIInterface $ toInterface ii]
+         in APIInterface $ toInterface ii
 
-    toInfo' _ = []
+    toInfo' it = error $ "not expecting a " ++ show it
 
 dumpAPI name = do
     lib <- load name Nothing
     infos <- getInfos lib
-    let apis = map toAPI infos
+    -- XXX: Work out what to do with boxed types.
+    let apis = map toAPI $
+            filter (\i -> baseInfoType i /= InfoTypeBoxed) infos
     forM_ (zip infos apis) $ \(info, api) -> do
-        print (baseInfoType info, baseInfoName info)
         print api
-        putStrLn ""
 
