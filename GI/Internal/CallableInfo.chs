@@ -40,9 +40,16 @@ callableInfoMayReturnNull ci = unsafePerformIO $ (== 0) <$>
 
 callableInfoReturnAttributes :: CallableInfoClass call => call -> [(String, String)]
 callableInfoReturnAttributes ci = unsafePerformIO $ do
-    allocaBytes {# sizeof GIAttributeIter #} $ \iter -> loop iter []
+    allocaBytes {# sizeof GIAttributeIter #} $ \iter -> do
+        zero {# sizeof GIAttributeIter #} (castPtr iter)
+        loop iter []
 
-    where loop iter acc = do
+    where -- XXX: There's probably a simpler way to do this.
+          zero :: Int -> Ptr Word8 -> IO ()
+          zero 0 _ = return ()
+          zero n p = poke p 0 >> zero (n - 1) (plusPtr p 1)
+
+          loop iter acc = do
               name <- new nullPtr
               value <- new nullPtr
               let iter' = AttributeIter (castPtr iter)
