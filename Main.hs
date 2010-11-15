@@ -7,5 +7,6 @@ import System.Glib.GError
 
 main = handleGError (\(GError dom code msg) -> print (dom, code, msg)) $ do
     initGUI
-    dumpAPI "TelepathyGLib"
+    apis <- loadAPI "TelepathyGLib"
+    forM_ apis $ \api -> print api
 

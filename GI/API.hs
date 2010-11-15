@@ -1,5 +1,5 @@
 
-module GI.API (API(..), dumpAPI) where
+module GI.API (API(..), loadAPI) where
 
 import Control.Applicative ((<$>))
 import Control.Monad (forM_)
@@ -204,12 +204,10 @@ toAPI i = toInfo' (baseInfoType i)
 
     toInfo' it = error $ "not expecting a " ++ show it
 
-dumpAPI name = do
+loadAPI :: String -> IO [API]
+loadAPI name = do
     lib <- load name Nothing
     infos <- getInfos lib
     -- XXX: Work out what to do with boxed types.
-    let apis = map toAPI $
-            filter (\i -> baseInfoType i /= InfoTypeBoxed) infos
-    forM_ (zip infos apis) $ \(info, api) -> do
-        print api
+    return $ map toAPI $ filter (\i -> baseInfoType i /= InfoTypeBoxed) infos
 
