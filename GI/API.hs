@@ -1,5 +1,19 @@
 
-module GI.API (API(..), loadAPI) where
+module GI.API
+    ( API(..)
+    , Constant(..)
+    , Arg(..)
+    , Callable(..)
+    , Function(..)
+    , Signal(..)
+    , Property(..)
+    , Field(..)
+    , Struct(..)
+    , Callback(..)
+    , Interface(..)
+    , Object(..)
+    , loadAPI
+    ) where
 
 import Control.Applicative ((<$>))
 import Control.Monad (forM_)
