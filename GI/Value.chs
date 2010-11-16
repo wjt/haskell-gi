@@ -5,6 +5,7 @@ module GI.Value
     , Value(..)
     , typeFromTypeInfo
     , fromArgument
+    , valueType
     ) where
 
 import Control.Applicative ((<$>))
@@ -64,6 +65,23 @@ data Value
     | VUTF8 String
     | VFileName String
     deriving (Eq, Show)
+
+valueType :: Value -> Type
+valueType VVoid           = TBasicType TVoid
+valueType (VBoolean _)    = TBasicType TBoolean
+valueType (VInt8 _)       = TBasicType TInt8
+valueType (VUInt8 _)      = TBasicType TUInt8
+valueType (VInt16 _)      = TBasicType TInt16
+valueType (VUInt16 _)     = TBasicType TUInt16
+valueType (VInt32 _)      = TBasicType TInt32
+valueType (VUInt32 _)     = TBasicType TUInt32
+valueType (VInt64 _)      = TBasicType TInt64
+valueType (VUInt64 _)     = TBasicType TUInt64
+valueType (VFloat _)      = TBasicType TFloat
+valueType (VDouble _)     = TBasicType TDouble
+valueType (VGType _)      = TBasicType TGType
+valueType (VUTF8 _)       = TBasicType TUTF8
+valueType (VFileName _)   = TBasicType TFileName
 
 typeFromTypeInfo :: TypeInfo -> Type
 typeFromTypeInfo ti =
