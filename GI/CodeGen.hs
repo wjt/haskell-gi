@@ -4,6 +4,7 @@ module GI.CodeGen
     , genFunction
     ) where
 
+import Data.Char (toUpper)
 import Data.Int
 import Data.Typeable (mkTyCon, mkTyConApp, typeOf)
 import Data.Word
@@ -29,6 +30,9 @@ haskellBasicType TDouble  = typeOf (0 :: Double)
 haskellBasicType t        = error $ "haskellBasicType: " ++ show t
 
 haskellType (TBasicType bt) = haskellBasicType bt
+haskellType t@(TArray _ ) = foreignType t
+haskellType t@(TGHash _ _) = foreignType t
+haskellType t@(TInterface _ ) = foreignType t
 haskellType t = error $ "haskellType: " ++ show t
 
 foreignBasicType TUTF8 = mkTyConApp (mkTyCon "CString") []
@@ -68,34 +72,59 @@ io t = mkTyConApp (mkTyCon "IO") [t]
 
 padTo n s = s ++ replicate (n - length s) ' '
 
+split c s = split' s "" []
+    where split' [] w ws = reverse (reverse w : ws)
+          split' (x:xs) w ws =
+              if x == c then split' xs "" (reverse w:ws)
+                  else split' xs (x:w) ws
+
+ucFirst (x:xs) = toUpper x : xs
+
+lowerName s =
+    case split '_' s of
+        [w] -> w
+        (w:ws) -> concat $ w : map ucFirst ws
+
+upperName = map ucFirst . split '_'
+
 genConstant :: Constant -> String
 genConstant (Constant name value) = str [
     name ++ " :: " ++ (show $ haskellType $ valueType value),
     name ++ " = " ++ valueStr value]
 
 genCallable :: String -> Callable -> String
-genCallable symbol callable = str $ [first] ++ argStrs ++ [last]
+genCallable symbol callable = str $ foreignImport ++ [""] ++ wrapper
     where
-    inArgs = filter ((== DirectionIn) . direction) $ args callable
-    outArgs = filter ((== DirectionOut) . direction) $ args callable
+
+    foreignImport = [first] ++ map fArgStr (args callable) ++ [last]
     first = "import foreign ccall \"" ++ symbol ++ "\" " ++
-        callableName callable ++ " :: "
-    argStrs = map argStr inArgs
-    argStr arg =
+                symbol ++ " :: "
+    fArgStr arg =
         let start = "    " ++
              (show $ foreignType $ argType arg) ++
              " -> "
         in padTo 40 start ++ "-- " ++ argName arg
-    last = "    " ++ (show $ io $ maybeOutType)
-    hReturnType = foreignType $ returnType callable
+    last = "    " ++ (show $ io $ foreignType $ returnType callable)
+
+    wrapper = signature
+    signature = [name ++ " ::"] ++ map hArgStr inArgs ++ [result]
+    inArgs = filter ((== DirectionIn) . direction) $ args callable
+    outArgs = filter ((== DirectionOut) . direction) $ args callable
+    name = lowerName $ callableName callable
+    hArgStr arg =
+        let start = "    " ++
+             (show $ haskellType $ argType arg) ++
+             " -> "
+        in padTo 40 start ++ "-- " ++ argName arg
+    result = "    " ++ show (io outType)
     outType =
-        case outArgs of
-            [] -> hReturnType
-            _ -> mkTyConApp (mkTyCon "(,)")
-                    (hReturnType : map (foreignType . argType) outArgs)
-    maybeOutType = if returnMayBeNull callable
-                       then mkTyConApp (mkTyCon "Maybe") [outType]
-                       else outType
+        let hReturnType = haskellType $ returnType callable
+            justType = case outArgs of
+                [] -> hReturnType
+                _ -> mkTyConApp (mkTyCon "(,)")
+                        (hReturnType : map (haskellType . argType) outArgs)
+            maybeType = mkTyConApp (mkTyCon "Maybe") [justType]
+         in if returnMayBeNull callable then maybeType else justType
 
 genFunction :: Function -> String
 genFunction (Function symbol callable) = genCallable symbol callable
