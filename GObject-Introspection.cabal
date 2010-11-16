@@ -14,6 +14,10 @@ Extra-source-files:
 
 Executable haskell-gi-dump
   main-is: Dump.hs
+  pkgconfig-depends: gobject-introspection-1.0
+  build-depends: base >= 4, gtk, glib
+  build-tools: hsc2hs
+  extensions: ForeignFunctionInterface
   other-modules:
       GI.Internal.Types,
       GI.Internal.ArgInfo,
@@ -31,9 +35,31 @@ Executable haskell-gi-dump
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
       GI.API,
-      GI.Util,
-      GI.Value
+      GI.Value,
+      GI.Util
+
+Executable haskell-gi-generate
+  main-is: Generate.hs
   pkgconfig-depends: gobject-introspection-1.0
-  extensions: ForeignFunctionInterface
   build-depends: base >= 4, gtk, glib
   build-tools: hsc2hs
+  extensions: ForeignFunctionInterface
+  other-modules:
+      GI.Internal.Types,
+      GI.Internal.ArgInfo,
+      GI.Internal.BaseInfo,
+      GI.Internal.CallableInfo,
+      GI.Internal.ConstantInfo,
+      GI.Internal.EnumInfo,
+      GI.Internal.FieldInfo,
+      GI.Internal.FunctionInfo,
+      GI.Internal.InterfaceInfo,
+      GI.Internal.ObjectInfo,
+      GI.Internal.ParamFlag,
+      GI.Internal.PropertyInfo,
+      GI.Internal.StructInfo,
+      GI.Internal.TypeInfo,
+      GI.Internal.Typelib,
+      GI.API,
+      GI.Value,
+      GI.Util
