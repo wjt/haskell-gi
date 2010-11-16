@@ -35,7 +35,7 @@ callableInfoCallerOwns ci = unsafePerformIO $ toEnum <$> fromIntegral <$>
     {# call get_caller_owns #} (stupidCast ci)
 
 callableInfoMayReturnNull :: CallableInfoClass call => call -> Bool
-callableInfoMayReturnNull ci = unsafePerformIO $ (== 0) <$>
+callableInfoMayReturnNull ci = unsafePerformIO $ (/= 0) <$>
     {# call may_return_null #} (stupidCast ci)
 
 callableInfoReturnAttributes :: CallableInfoClass call => call -> [(String, String)]

@@ -37,19 +37,19 @@ argInfoDirection ai = unsafePerformIO $ toEnum <$> fromIntegral <$>
     {# call get_direction #} (stupidCast ai)
 
 argInfoIsCallerAllocates :: ArgInfoClass arg => arg -> Bool
-argInfoIsCallerAllocates ai = unsafePerformIO $ (== 0) <$>
+argInfoIsCallerAllocates ai = unsafePerformIO $ (/= 0) <$>
     {# call is_caller_allocates #} (stupidCast ai)
 
 argInfoIsReturnValue :: ArgInfoClass arg => arg -> Bool
-argInfoIsReturnValue ai = unsafePerformIO $ (== 0) <$>
+argInfoIsReturnValue ai = unsafePerformIO $ (/= 0) <$>
     {# call is_return_value #} (stupidCast ai)
 
 argInfoIsOptional :: ArgInfoClass arg => arg -> Bool
-argInfoIsOptional ai = unsafePerformIO $ (== 0) <$>
+argInfoIsOptional ai = unsafePerformIO $ (/= 0) <$>
     {# call is_optional #} (stupidCast ai)
 
 argInfoMayBeNull :: ArgInfoClass arg => arg -> Bool
-argInfoMayBeNull ai = unsafePerformIO $ (== 0) <$>
+argInfoMayBeNull ai = unsafePerformIO $ (/= 0) <$>
     {# call is_optional #} (stupidCast ai)
 
 argInfoOwnershipTransfer :: ArgInfoClass arg => arg -> Transfer

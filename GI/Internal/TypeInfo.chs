@@ -36,7 +36,7 @@ stupidCast ti = castPtr p
 
 typeInfoIsPointer :: TypeInfoClass tic => tic -> Bool
 typeInfoIsPointer ti = unsafePerformIO $
-    (== 0) <$> {# call is_pointer #} (stupidCast ti)
+    (/= 0) <$> {# call is_pointer #} (stupidCast ti)
 
 typeInfoTag :: TypeInfoClass tic => tic -> TypeTag
 typeInfoTag ti = unsafePerformIO $ toEnum . fromIntegral <$>
@@ -59,7 +59,7 @@ typeInfoArrayFixedSize ti = unsafePerformIO $ fromIntegral <$>
     {# call get_array_fixed_size #} (stupidCast ti)
 
 typeInfoIsZeroTerminated :: TypeInfoClass tic => tic -> Bool
-typeInfoIsZeroTerminated ti = unsafePerformIO $ (== 0) <$>
+typeInfoIsZeroTerminated ti = unsafePerformIO $ (/= 0) <$>
     {# call is_zero_terminated #} (stupidCast ti)
 
 typeInfoNErrorDomains :: TypeInfoClass tic => tic -> Int
