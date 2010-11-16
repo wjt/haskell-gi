@@ -12,8 +12,8 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 Extra-source-files:  
 
-Executable lol
-  main-is: Main.hs
+Executable haskell-gi-dump
+  main-is: Dump.hs
   other-modules:
       GI.Internal.Types,
       GI.Internal.ArgInfo,
