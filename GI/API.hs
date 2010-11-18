@@ -49,6 +49,17 @@ toConstant ci =
         value = fromArgument typeInfo arg
      in Constant name value
 
+data Enumeration = Enumeration {
+    enumName :: String,
+    enumValues :: [(String, Word64)] }
+    deriving Show
+
+toEnumeration :: EnumInfo -> Enumeration
+toEnumeration ei =
+    Enumeration (baseInfoName . baseInfo $ ei)
+        (map (\vi -> (baseInfoName . baseInfo $ vi, valueInfoValue vi))
+            (enumInfoValues ei))
+
 data Arg = Arg {
     argName :: String,
     argType :: Type,
@@ -174,7 +185,7 @@ data API
     | APICallback Callback
     -- XXX: These plus APIUnion should have their gTypes exposed (via a
     -- binding of GIRegisteredTypeInfo.
-    | APIEnum { name :: String, values :: [(String, Word64)] }
+    | APIEnum Enumeration
     | APIInterface Interface
     | APIObject Object
     | APIStruct Struct
@@ -189,12 +200,8 @@ toAPI i = toInfo' (baseInfoType i)
          in APIConst $ toConstant ci
 
     toInfo' InfoTypeEnum =
-        let name = baseInfoName i
-            ei = fromBaseInfo (baseInfo i) :: EnumInfo
-            vis = enumInfoValues ei
-            names = map (baseInfoName . baseInfo) vis
-            values = map valueInfoValue vis
-         in APIEnum name (zip names values)
+        let ei = fromBaseInfo (baseInfo i) :: EnumInfo
+         in APIEnum $ toEnumeration ei
 
     toInfo' InfoTypeFunction =
         let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
