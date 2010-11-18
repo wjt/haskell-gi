@@ -92,11 +92,9 @@ genConstant (Constant name value) = str [
     name ++ " :: " ++ (show $ haskellType $ valueType value),
     name ++ " = " ++ valueStr value]
 
-genCallable :: String -> Callable -> String
-genCallable symbol callable = str $ foreignImport ++ [""] ++ wrapper
+foreignImport symbol callable =
+        [first] ++ map fArgStr (args callable) ++ [last]
     where
-
-    foreignImport = [first] ++ map fArgStr (args callable) ++ [last]
     first = "import foreign ccall \"" ++ symbol ++ "\" " ++
                 symbol ++ " :: "
     fArgStr arg =
@@ -106,6 +104,12 @@ genCallable symbol callable = str $ foreignImport ++ [""] ++ wrapper
         in padTo 40 start ++ "-- " ++ argName arg
     last = "    " ++ (show $ io $ foreignType $ returnType callable)
 
+
+genCallable :: String -> Callable -> String
+genCallable symbol callable =
+    str $ foreignImport symbol callable ++ [""] ++ wrapper
+
+    where
     wrapper = signature
     signature = [name ++ " ::"] ++ map hArgStr inArgs ++ [result]
     inArgs = filter ((== DirectionIn) . direction) $ args callable
