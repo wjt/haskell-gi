@@ -192,37 +192,23 @@ data API
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> API
-toAPI i = toInfo' (baseInfoType i)
+toAPI i = toInfo' (baseInfoType i) (baseInfo i)
     where
 
     toInfo' InfoTypeConstant =
-        let ci = fromBaseInfo (baseInfo i) :: ConstantInfo
-         in APIConst $ toConstant ci
-
+        APIConst . toConstant . fromBaseInfo
     toInfo' InfoTypeEnum =
-        let ei = fromBaseInfo (baseInfo i) :: EnumInfo
-         in APIEnum $ toEnumeration ei
-
+        APIEnum . toEnumeration . fromBaseInfo
     toInfo' InfoTypeFunction =
-        let fi = fromBaseInfo (baseInfo i) :: FunctionInfo
-         in APIFunction $ toFunction fi
-
+        APIFunction . toFunction . fromBaseInfo
     toInfo' InfoTypeCallback =
-        let ci = fromBaseInfo (baseInfo i) :: CallableInfo
-         in APICallback $ Callback $ toCallable ci
-
+        APICallback . Callback . toCallable . fromBaseInfo
     toInfo' InfoTypeStruct =
-        let si = fromBaseInfo (baseInfo i) :: StructInfo
-         in APIStruct $ toStruct si
-
+        APIStruct . toStruct . fromBaseInfo
     toInfo' InfoTypeObject =
-        let oi = fromBaseInfo (baseInfo i) :: ObjectInfo
-         in APIObject $ toObject oi
-
+        APIObject . toObject . fromBaseInfo
     toInfo' InfoTypeInterface =
-        let ii = fromBaseInfo (baseInfo i) :: InterfaceInfo
-         in APIInterface $ toInterface ii
-
+        APIInterface . toInterface . fromBaseInfo
     toInfo' it = error $ "not expecting a " ++ show it
 
 loadAPI :: String -> IO [API]
