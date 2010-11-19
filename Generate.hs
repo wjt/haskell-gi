@@ -7,6 +7,7 @@ import Graphics.UI.Gtk
 import System.Glib.GError
 
 import GI.API
+import GI.Code
 import GI.CodeGen
 
 main = handleGError (\(GError dom code msg) -> print (dom, code, msg)) $ do
@@ -14,8 +15,8 @@ main = handleGError (\(GError dom code msg) -> print (dom, code, msg)) $ do
     [name] <- getArgs
     apis <- loadAPI name
     forM_ apis $ \api ->
-        case api of
-            APIConst c -> putStrLn $ genConstant c
-            APIFunction f -> putStrLn $ genFunction f
+        putStr . codeToString . runCodeGen' $ case api of
+            APIConst c -> genConstant c >> line ""
+            APIFunction f -> genFunction f >> line ""
             _ -> return ()
 

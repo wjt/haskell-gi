@@ -42,7 +42,7 @@ Executable haskell-gi-dump
 Executable haskell-gi-generate
   main-is: Generate.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, gtk, glib
+  build-depends: base >= 4, gtk, glib, mtl
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   other-modules:
@@ -63,5 +63,6 @@ Executable haskell-gi-generate
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
       GI.API,
+      GI.Code,
       GI.Value,
       GI.Util
