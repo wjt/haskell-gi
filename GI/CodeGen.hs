@@ -14,6 +14,8 @@ import GI.Code
 import GI.Value
 import GI.Internal.ArgInfo
 
+con s xs = mkTyConApp (mkTyCon s) xs
+
 haskellBasicType TVoid    = typeOf ()
 haskellBasicType TBoolean = typeOf True
 haskellBasicType TInt8    = typeOf (0 :: Int8)
@@ -36,19 +38,17 @@ haskellType t@(TGHash _ _) = foreignType t
 haskellType t@(TInterface _ ) = foreignType t
 haskellType t = error $ "haskellType: " ++ show t
 
-foreignBasicType TUTF8 = mkTyConApp (mkTyCon "CString") []
-foreignBasicType TGType = mkTyConApp (mkTyCon "GType") []
+foreignBasicType TUTF8 = "CString" `con` []
+foreignBasicType TGType = "GType" `con` []
 foreignBasicType t = haskellBasicType t
 
 foreignType (TBasicType t) = foreignBasicType t
-foreignType (TArray a) =
-    mkTyConApp (mkTyCon "GArray") [foreignType a]
-foreignType (TGHash a b) =
-    mkTyConApp (mkTyCon "GHash") [foreignType a, foreignType b]
+foreignType (TArray a) = "GArray" `con` [foreignType a]
+foreignType (TGHash a b) = "GHash" `con` [foreignType a, foreignType b]
 -- XXX: Possibly nonsense. Perhaps the interface name needs to be qualified,
 -- and its existence (in the typelib we're generating code for, or some other
 -- typelib) verified.
-foreignType (TInterface s) = mkTyConApp (mkTyCon s) []
+foreignType (TInterface s) = s `con` []
 foreignType t = error $ "foreignType: " ++ show t
 
 valueStr VVoid         = "()"
@@ -67,7 +67,7 @@ valueStr (VGType x)    = show x
 valueStr (VUTF8 x)     = show x
 valueStr (VFileName x) = show x
 
-io t = mkTyConApp (mkTyCon "IO") [t]
+io t = "IO" `con` [t]
 
 padTo n s = s ++ replicate (n - length s) ' '
 
@@ -127,11 +127,11 @@ genCallable symbol callable = do
     result = show (io outType)
     outType =
         let hReturnType = haskellType $ returnType callable
+            hOutArgTypes = map (haskellType . argType) outArgs
             justType = case outArgs of
                 [] -> hReturnType
-                _ -> mkTyConApp (mkTyCon "(,)")
-                        (hReturnType : map (haskellType . argType) outArgs)
-            maybeType = mkTyConApp (mkTyCon "Maybe") [justType]
+                _ -> "(,)" `con` (hReturnType : hOutArgTypes)
+            maybeType = "Maybe" `con` [justType]
          in if returnMayBeNull callable then maybeType else justType
 
 genFunction :: Function -> CodeGen ()
