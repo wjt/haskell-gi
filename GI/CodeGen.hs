@@ -108,7 +108,7 @@ foreignImport symbol callable = do
 genCallable :: String -> Callable -> CodeGen ()
 genCallable symbol callable = do
     foreignImport symbol callable
-    line ""
+    blank
     wrapper
 
     where
