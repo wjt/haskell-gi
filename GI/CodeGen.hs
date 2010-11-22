@@ -4,8 +4,10 @@ module GI.CodeGen
     , genFunction
     ) where
 
+import Control.Monad (forM_)
 import Data.Char (toUpper)
 import Data.Int
+import Data.List (intercalate)
 import Data.Typeable (mkTyCon, mkTyConApp, typeOf)
 import Data.Word
 
@@ -26,6 +28,7 @@ haskellBasicType TInt32   = typeOf (0 :: Int32)
 haskellBasicType TUInt32  = typeOf (0 :: Word32)
 haskellBasicType TInt64   = typeOf (0 :: Int64)
 haskellBasicType TUInt64  = typeOf (0 :: Word64)
+-- XXX: Is this correct?
 haskellBasicType TGType   = typeOf (0 :: Word)
 haskellBasicType TUTF8    = typeOf ""
 haskellBasicType TFloat   = typeOf (0 :: Float)
@@ -38,9 +41,10 @@ haskellType t@(TGHash _ _) = foreignType t
 haskellType t@(TInterface _ ) = foreignType t
 haskellType t = error $ "haskellType: " ++ show t
 
-foreignBasicType TUTF8 = "CString" `con` []
-foreignBasicType TGType = "GType" `con` []
-foreignBasicType t = haskellBasicType t
+foreignBasicType TBoolean = "CInt" `con` []
+foreignBasicType TUTF8    = "CString" `con` []
+foreignBasicType TGType   = "GType" `con` []
+foreignBasicType t        = haskellBasicType t
 
 foreignType (TBasicType t) = foreignBasicType t
 foreignType (TArray a) = "GArray" `con` [foreignType a]
@@ -69,6 +73,8 @@ valueStr (VFileName x) = show x
 
 io t = "IO" `con` [t]
 
+ptr t = "PTR" `con` [t]
+
 padTo n s = s ++ replicate (n - length s) ' '
 
 split c s = split' s "" []
@@ -85,6 +91,12 @@ lowerName s =
         (w:ws) -> concat $ w : map ucFirst ws
 
 upperName = map ucFirst . split '_'
+
+prime = (++ "'")
+
+mkLet name value = line $ "let " ++ name ++ " = " ++ value
+
+mkBind name value = line $ name ++ " <- " ++ value
 
 genConstant :: Constant -> CodeGen ()
 genConstant (Constant name value) = do
@@ -105,6 +117,23 @@ foreignImport symbol callable = do
          in padTo 40 start ++ "-- " ++ argName arg
     last = show $ io $ foreignType $ returnType callable
 
+hToF arg =
+    if hType == fType
+        then mkLet' "id"
+        else hToF' (show hType) (show fType)
+
+    where
+    name = argName arg
+    hType = haskellType $ argType arg
+    fType = foreignType $ argType arg
+    mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
+    mkBind' conv = mkBind (prime name) (conv ++ " `fmap` " ++ name)
+    hToF' "[Char]" "CString" = mkBind' "newCString"
+    hToF' "Word"   "GType"   = mkLet' "fromIntegral"
+    hToF' "Bool"   "CInt"    = mkLet' "fromEnum"
+    hToF' _ _ = error $
+        "don't know how to convert " ++ show hType ++ " to " ++ show fType
+
 genCallable :: String -> Callable -> CodeGen ()
 genCallable symbol callable = do
     foreignImport symbol callable
@@ -112,15 +141,46 @@ genCallable symbol callable = do
     wrapper
 
     where
-    wrapper = signature
+    name = lowerName $ callableName callable
+    inArgs = filter ((== DirectionIn) . direction) $ args callable
+    outArgs = filter ((== DirectionOut) . direction) $ args callable
+    wrapper = do
+        signature
+        line $ name ++ " " ++ intercalate " " (map argName inArgs) ++ " = do"
+        indent $ do
+            convertIn
+            line $ "result <- " ++ symbol ++
+                concatMap (prime . (" " ++) . argName) (args callable)
+            convertOut
     signature = do
         line $ name ++ " ::"
         indent $ do
             mapM_ (line . hArgStr) inArgs
             line result
-    inArgs = filter ((== DirectionIn) . direction) $ args callable
-    outArgs = filter ((== DirectionOut) . direction) $ args callable
-    name = lowerName $ callableName callable
+    convertIn = forM_ (args callable) $ \arg ->
+        if direction arg == DirectionIn
+            then hToF arg
+            else mkBind (prime $ argName arg) $
+                     "malloc :: " ++
+                     show (io $ ptr $ foreignType $ argType arg)
+    -- XXX: Should create ForeignPtrs for pointer results.
+    -- XXX: Check argument transfer.
+    convertOut = do
+        -- XXX: Do reverse conversion here.
+        mkLet "result'" "result"
+        forM_ outArgs $ \arg ->
+            if direction arg == DirectionIn
+                then return ()
+                else do
+                    mkBind (prime $ prime $ argName arg) $
+                        "peek " ++ (prime $ argName arg)
+        let pps = map (prime . prime . argName) outArgs
+        case (show outType, outArgs) of
+            ("()", []) -> line $ "return ()"
+            ("()", _) -> line $ "return (" ++ intercalate ", " pps ++ ")"
+            (_ , []) -> line $ "return result'"
+            (_ , _) -> line $
+                "return (" ++ intercalate ", " ("result'" : pps) ++ ")"
     hArgStr arg =
         let start = (show $ haskellType $ argType arg) ++ " -> "
          in padTo 40 start ++ "-- " ++ argName arg
