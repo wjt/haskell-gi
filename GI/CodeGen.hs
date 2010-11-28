@@ -5,7 +5,7 @@ module GI.CodeGen
     ) where
 
 import Control.Monad (forM_)
-import Data.Char (toUpper)
+import Data.Char (toLower, toUpper)
 import Data.Int
 import Data.List (intercalate)
 import Data.Typeable (mkTyCon, mkTyConApp, typeOf)
@@ -83,12 +83,12 @@ split c s = split' s "" []
               if x == c then split' xs "" (reverse w:ws)
                   else split' xs (x:w) ws
 
-ucFirst (x:xs) = toUpper x : xs
+ucFirst (x:xs) = toUpper x : map toLower xs
 
 lowerName s =
     case split '_' s of
-        [w] -> w
-        (w:ws) -> concat $ w : map ucFirst ws
+        [w] -> map toLower w
+        (w:ws) -> concat $ map toLower w : map ucFirst ws
 
 upperName = map ucFirst . split '_'
 
@@ -100,8 +100,9 @@ mkBind name value = line $ name ++ " <- " ++ value
 
 genConstant :: Constant -> CodeGen ()
 genConstant (Constant name value) = do
-    line $ name ++ " :: " ++ (show $ haskellType $ valueType value)
-    line $ name ++ " = " ++ valueStr value
+    let name' = lowerName name
+    line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
+    line $ name' ++ " = " ++ valueStr value
 
 foreignImport :: String -> Callable -> CodeGen ()
 foreignImport symbol callable = do
