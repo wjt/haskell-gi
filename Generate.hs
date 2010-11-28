@@ -6,17 +6,13 @@ import System.Environment (getArgs)
 import Graphics.UI.Gtk
 import System.Glib.GError
 
-import GI.API
-import GI.Code
-import GI.CodeGen
+import GI.API (loadAPI)
+import GI.Code (codeToString, runCodeGen')
+import GI.CodeGen (genModule)
 
 main = handleGError (\(GError dom code msg) -> print (dom, code, msg)) $ do
     initGUI
     [name] <- getArgs
     apis <- loadAPI name
-    forM_ apis $ \api ->
-        putStr . codeToString . runCodeGen' $ case api of
-            APIConst c -> genConstant c >> line ""
-            APIFunction f -> genFunction f >> line ""
-            _ -> return ()
+    putStrLn $ codeToString $ runCodeGen' $ genModule name apis
 

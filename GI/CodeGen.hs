@@ -2,6 +2,7 @@
 module GI.CodeGen
     ( genConstant
     , genFunction
+    , genModule
     ) where
 
 import Control.Monad (forM_)
@@ -197,4 +198,15 @@ genCallable symbol callable = do
 
 genFunction :: Function -> CodeGen ()
 genFunction (Function symbol callable) = genCallable symbol callable
+
+genModule :: String -> [API] -> CodeGen ()
+genModule name apis = do
+    blank
+    -- XXX: Generate export list.
+    line $ "module " ++ name ++ " where"
+    blank
+    forM_ apis $ \api -> case api of
+        APIConst c -> genConstant c >> blank
+        APIFunction f -> genFunction f >> blank
+        _ -> return ()
 
