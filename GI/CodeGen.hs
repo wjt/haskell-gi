@@ -112,7 +112,7 @@ foreignImport symbol callable = do
         mapM_ (line . fArgStr) (args callable)
         line last
     where
-    first = "import foreign ccall \"" ++ symbol ++ "\" " ++
+    first = "foreign import ccall \"" ++ symbol ++ "\" " ++
                 symbol ++ " :: "
     fArgStr arg =
         let start = (show $ foreignType $ argType arg) ++ " -> "
