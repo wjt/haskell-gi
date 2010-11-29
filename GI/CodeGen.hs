@@ -5,10 +5,12 @@ module GI.CodeGen
     , genModule
     ) where
 
-import Control.Monad (forM_)
+import Control.Applicative ((<$>))
+import Control.Monad (forM, forM_)
+import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
 import Data.Int
-import Data.List (intercalate)
+import Data.List (intercalate, partition)
 import Data.Typeable (mkTyCon, mkTyConApp, typeOf)
 import Data.Word
 
@@ -106,7 +108,7 @@ genConstant (Constant name value) = do
     line $ name' ++ " = " ++ valueStr value
 
 foreignImport :: String -> Callable -> CodeGen ()
-foreignImport symbol callable = do
+foreignImport symbol callable = tag Import $ do
     line first
     indent $ do
         mapM_ (line . fArgStr) (args callable)
@@ -147,8 +149,9 @@ genCallable symbol callable = do
     inArgs = filter ((== DirectionIn) . direction) $ args callable
     outArgs = filter ((== DirectionOut) . direction) $ args callable
     wrapper = do
-        signature
-        line $ name ++ " " ++ intercalate " " (map argName inArgs) ++ " = do"
+        tag TypeDecl signature
+        tag Decl $ line $
+            name ++ " " ++ intercalate " " (map argName inArgs) ++ " = do"
         indent $ do
             convertIn
             line $ "result <- " ++ symbol ++
@@ -206,8 +209,16 @@ genModule name apis = do
     -- XXX: Generate export list.
     line $ "module " ++ name ++ " where"
     blank
-    forM_ apis $ \api -> case api of
-        APIConst c -> genConstant c >> blank
-        APIFunction f -> genFunction f >> blank
-        _ -> return ()
+    let (imports, rest) = splitImports $ runCodeGen' $ forM_ apis $ \api ->
+            case api of
+                APIConst c -> genConstant c >> blank
+                APIFunction f -> genFunction f >> blank
+                _ -> return ()
+    mapM_ (\c -> tell c >> blank) imports
+    mapM_ tell rest
+
+    where splitImports = partition isImport . codeToList
+          isImport (Tag Import c) = True
+          isImport _ = False
+
 
