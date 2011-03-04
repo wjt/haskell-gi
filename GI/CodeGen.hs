@@ -86,6 +86,9 @@ split c s = split' s "" []
               if x == c then split' xs "" (reverse w:ws)
                   else split' xs (x:w) ws
 
+escapeReserved "type" = "type_"
+escapeReserved s = s
+
 ucFirst (x:xs) = toUpper x : map toLower xs
 
 lowerName s =
@@ -127,7 +130,7 @@ hToF arg =
         else hToF' (show hType) (show fType)
 
     where
-    name = argName arg
+    name = escapeReserved $ argName arg
     hType = haskellType $ argType arg
     fType = foreignType $ argType arg
     mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
@@ -149,13 +152,16 @@ genCallable symbol callable = do
     inArgs = filter ((== DirectionIn) . direction) $ args callable
     outArgs = filter ((== DirectionOut) . direction) $ args callable
     wrapper = do
+        let argName' = escapeReserved . argName
         tag TypeDecl signature
         tag Decl $ line $
-            name ++ " " ++ intercalate " " (map argName inArgs) ++ " = do"
+            name ++ " " ++
+            intercalate " " (map argName' inArgs) ++
+            " = do"
         indent $ do
             convertIn
             line $ "result <- " ++ symbol ++
-                concatMap (prime . (" " ++) . argName) (args callable)
+                concatMap (prime . (" " ++) . argName') (args callable)
             convertOut
     signature = do
         line $ name ++ " ::"
