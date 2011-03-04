@@ -60,6 +60,12 @@ toEnumeration ei =
         (map (\vi -> (baseInfoName . baseInfo $ vi, valueInfoValue vi))
             (enumInfoValues ei))
 
+data Flags = Flags Enumeration
+    deriving Show
+
+toFlags :: EnumInfo -> Flags
+toFlags = Flags . toEnumeration
+
 data Arg = Arg {
     argName :: String,
     argType :: Type,
@@ -186,6 +192,7 @@ data API
     -- XXX: These plus APIUnion should have their gTypes exposed (via a
     -- binding of GIRegisteredTypeInfo.
     | APIEnum Enumeration
+    | APIFlags Flags
     | APIInterface Interface
     | APIObject Object
     | APIStruct Struct
@@ -199,6 +206,8 @@ toAPI i = toInfo' (baseInfoType i) (baseInfo i)
         APIConst . toConstant . fromBaseInfo
     toInfo' InfoTypeEnum =
         APIEnum . toEnumeration . fromBaseInfo
+    toInfo' InfoTypeFlags =
+        APIFlags . toFlags . fromBaseInfo
     toInfo' InfoTypeFunction =
         APIFunction . toFunction . fromBaseInfo
     toInfo' InfoTypeCallback =
