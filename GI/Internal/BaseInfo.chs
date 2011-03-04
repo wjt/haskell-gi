@@ -18,7 +18,8 @@ import Control.Applicative ((<$>))
 
 {# context prefix="g_base_info" #}
 
-{# enum GIInfoType as InfoType {underscoreToCase} with prefix="GI" deriving (Show, Eq) #}
+{# enum GIInfoType as InfoType {underscoreToCase} with prefix="GI"
+  deriving (Show, Eq) #}
 
 -- Because all the C types are synonyms, c2hs picks the last one...
 stupidCast :: BaseInfoClass base
