@@ -215,6 +215,11 @@ genModule name apis = do
     -- XXX: Generate export list.
     line $ "module " ++ name ++ " where"
     blank
+    line $ "import Data.Int"
+    line $ "import Data.Word"
+    line $ "import Foreign"
+    line $ "import Foreign.C"
+    blank
     let (imports, rest) = splitImports $ runCodeGen' $ forM_ apis $ \api ->
             case api of
                 APIConst c -> genConstant c >> blank
