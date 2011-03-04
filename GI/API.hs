@@ -34,6 +34,7 @@ import GI.Internal.PropertyInfo
 import GI.Internal.StructInfo
 import GI.Internal.TypeInfo
 import GI.Internal.Typelib (getInfos, load)
+import GI.Internal.UnionInfo
 import GI.Value
 
 data Constant = Constant {
@@ -153,6 +154,18 @@ toStruct si =
     Struct (baseInfoName . baseInfo $ si)
         (map toField $ structInfoFields si)
 
+-- XXX: Capture alignment and method info.
+
+data Union = Union {
+    unionName :: String,
+    unionFields :: [Field] }
+    deriving Show
+
+toUnion :: UnionInfo -> Union
+toUnion ui =
+    Union (baseInfoName . baseInfo $ ui)
+        (map toField $ unionInfoFields ui)
+
 data Callback = Callback Callable
     deriving Show
 
@@ -196,6 +209,7 @@ data API
     | APIInterface Interface
     | APIObject Object
     | APIStruct Struct
+    | APIUnion Union
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> API
@@ -214,6 +228,8 @@ toAPI i = toInfo' (baseInfoType i) (baseInfo i)
         APICallback . Callback . toCallable . fromBaseInfo
     toInfo' InfoTypeStruct =
         APIStruct . toStruct . fromBaseInfo
+    toInfo' InfoTypeUnion =
+        APIUnion . toUnion . fromBaseInfo
     toInfo' InfoTypeObject =
         APIObject . toObject . fromBaseInfo
     toInfo' InfoTypeInterface =

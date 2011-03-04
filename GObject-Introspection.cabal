@@ -35,6 +35,7 @@ Executable haskell-gi-dump
       GI.Internal.StructInfo,
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
+      GI.Internal.UnionInfo,
       GI.API,
       GI.Value,
       GI.Util
@@ -62,6 +63,7 @@ Executable haskell-gi-generate
       GI.Internal.StructInfo,
       GI.Internal.TypeInfo,
       GI.Internal.Typelib,
+      GI.Internal.UnionInfo,
       GI.API,
       GI.Code,
       GI.Value,
