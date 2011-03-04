@@ -104,7 +104,9 @@ ucFirst (x:xs) = toUpper x : map toLower xs
 lowerName s =
     case split '_' s of
         [w] -> map toLower w
-        (w:ws) -> concat $ map toLower w : map ucFirst ws
+        (w:ws) -> concat $ map toLower w : map ucFirst' ws
+    where ucFirst' "" = "_"
+          ucFirst' x = ucFirst x
 
 upperName = map ucFirst . split '_'
 
