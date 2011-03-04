@@ -76,7 +76,7 @@ valueStr (VFileName x) = show x
 
 io t = "IO" `con` [t]
 
-ptr t = "PTR" `con` [t]
+ptr t = "Ptr" `con` [t]
 
 padTo n s = s ++ replicate (n - length s) ' '
 
