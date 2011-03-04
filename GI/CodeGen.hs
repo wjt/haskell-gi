@@ -11,7 +11,7 @@ import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
 import Data.Int
 import Data.List (intercalate, partition)
-import Data.Typeable (mkTyCon, mkTyConApp, typeOf)
+import Data.Typeable (TypeRep, mkTyCon, mkTyConApp, typeOf)
 import Data.Word
 
 import GI.API
@@ -38,6 +38,7 @@ haskellBasicType TFloat   = typeOf (0 :: Float)
 haskellBasicType TDouble  = typeOf (0 :: Double)
 haskellBasicType t        = error $ "haskellBasicType: " ++ show t
 
+haskellType :: Type -> TypeRep
 haskellType (TBasicType bt) = haskellBasicType bt
 haskellType t@(TArray _ ) = foreignType t
 haskellType t@(TGHash _ _) = foreignType t
@@ -49,6 +50,7 @@ foreignBasicType TUTF8    = "CString" `con` []
 foreignBasicType TGType   = "GType" `con` []
 foreignBasicType t        = haskellBasicType t
 
+foreignType :: Type -> TypeRep
 foreignType (TBasicType t) = foreignBasicType t
 foreignType (TArray a) = "GArray" `con` [foreignType a]
 foreignType (TGHash a b) = "GHash" `con` [foreignType a, foreignType b]
