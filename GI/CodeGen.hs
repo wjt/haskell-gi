@@ -89,6 +89,8 @@ split c s = split' s "" []
                   else split' xs (x:w) ws
 
 escapeReserved "type" = "type_"
+escapeReserved "in" = "in_"
+escapeReserved "data" = "data_"
 escapeReserved s = s
 
 ucFirst (x:xs) = toUpper x : map toLower xs
