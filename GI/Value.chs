@@ -111,6 +111,8 @@ fromArgument typeInfo (Argument arg) =
     where
 
     basic TInt32 = VInt32 <$> fromIntegral <$> {# get GIArgument->v_int32 #} arg
+    -- XXX: Loss of precision?
+    basic TDouble = VDouble <$> fromRational <$> toRational <$>  {# get GIArgument->v_double #} arg
     basic TUTF8 = VUTF8 <$> (peekCString =<< {# get GIArgument->v_string #} arg)
     basic t = error $ "implement me: " ++ show t
 
