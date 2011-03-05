@@ -55,11 +55,11 @@ foreignBasicType t        = haskellBasicType t
 
 foreignType :: Type -> TypeRep
 foreignType (TBasicType t) = foreignBasicType t
-foreignType (TArray a) = "GArray" `con` [foreignType a]
-foreignType (TGHash a b) = "GHash" `con` [foreignType a, foreignType b]
-foreignType TError = "GError" `con` []
-foreignType (TGList a) = "GList" `con` [foreignType a]
-foreignType (TGSList a) = "GSList" `con` [foreignType a]
+foreignType (TArray a) = "Array" `con` [foreignType a]
+foreignType (TGHash a b) = "HashTable" `con` [foreignType a, foreignType b]
+foreignType TError = "Error" `con` []
+foreignType (TGList a) = "List" `con` [foreignType a]
+foreignType (TGSList a) = "SList" `con` [foreignType a]
 -- XXX: Possibly nonsense. Perhaps the interface name needs to be qualified,
 -- and its existence (in the typelib we're generating code for, or some other
 -- typelib) verified.
