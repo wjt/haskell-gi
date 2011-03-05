@@ -220,6 +220,29 @@ genCallable symbol callable = do
 genFunction :: Function -> CodeGen ()
 genFunction (Function symbol callable) = genCallable symbol callable
 
+genStruct :: Struct -> CodeGen ()
+genStruct (Struct name fields) = do
+  line $ "-- struct " ++ name
+  line $ "data " ++ name ++ " = " ++ name ++ " (Ptr " ++ name ++ ")"
+
+genEnum :: Enumeration -> CodeGen ()
+genEnum (Enumeration name fields) = do
+  -- XXX
+  line $ "-- enum " ++ name
+  line $ "data " ++ name ++ " = " ++ name
+
+genFlags :: Flags -> CodeGen ()
+genFlags (Flags (Enumeration name fields)) = do
+  -- XXX
+  line $ "-- flags " ++ name
+  line $ "data " ++ name ++ " = " ++ name
+
+genCallback :: Callback -> CodeGen ()
+genCallback (Callback c) = do
+  line $ "-- callback " ++ callableName c
+  -- XXX
+  line $ "type " ++ callableName c ++ " =  () -> ()"
+
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do
     line $ "-- Generated code."
@@ -238,6 +261,10 @@ genModule name apis = do
             case api of
                 APIConst c -> genConstant c >> blank
                 APIFunction f -> genFunction f >> blank
+                APIEnum e -> genEnum e >> blank
+                APIFlags f -> genFlags f >> blank
+                APICallback c -> genCallback c >> blank
+                APIStruct s -> genStruct s >> blank
                 _ -> return ()
     mapM_ (\c -> tell c >> blank) imports
     mapM_ tell rest
