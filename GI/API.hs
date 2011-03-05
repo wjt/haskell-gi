@@ -12,6 +12,8 @@ module GI.API
     , Callback(..)
     , Interface(..)
     , Object(..)
+    , Enumeration(..)
+    , Flags (..)
     , loadAPI
     ) where
 
