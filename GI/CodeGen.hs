@@ -222,6 +222,8 @@ genFunction (Function symbol callable) = genCallable symbol callable
 
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do
+    line $ "-- Generated code."
+    blank
     line $ "{-# LANGUAGE ForeignFunctionInterface #-}"
     blank
     -- XXX: Generate export list.
