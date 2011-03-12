@@ -12,36 +12,8 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 Extra-source-files:
 
-Executable haskell-gi-dump
-  main-is: Dump.hs
-  pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, containers, gtk, glib
-  build-tools: hsc2hs
-  extensions: ForeignFunctionInterface
-  other-modules:
-      GI.Internal.Types,
-      GI.Internal.ArgInfo,
-      GI.Internal.BaseInfo,
-      GI.Internal.CallableInfo,
-      GI.Internal.ConstantInfo,
-      GI.Internal.EnumInfo,
-      GI.Internal.FieldInfo,
-      GI.Internal.FunctionInfo,
-      GI.Internal.InterfaceInfo,
-      GI.Internal.ObjectInfo,
-      GI.Internal.ParamFlag,
-      GI.Internal.PropertyInfo,
-      GI.Internal.RegisteredTypeInfo,
-      GI.Internal.StructInfo,
-      GI.Internal.TypeInfo,
-      GI.Internal.Typelib,
-      GI.Internal.UnionInfo,
-      GI.API,
-      GI.Value,
-      GI.Util
-
-Executable haskell-gi-generate
-  main-is: Generate.hs
+Executable haskell-gi
+  main-is: Main.hs
   pkgconfig-depends: gobject-introspection-1.0
   build-depends: base >= 4, containers, gtk, glib, mtl
   build-tools: hsc2hs
