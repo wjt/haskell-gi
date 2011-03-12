@@ -257,7 +257,8 @@ genModule name apis = do
     line $ "import Foreign"
     line $ "import Foreign.C"
     blank
-    let (imports, rest) = splitImports $ runCodeGen' $ forM_ apis $ \api ->
+    cfg <- config
+    let (imports, rest) = splitImports $ runCodeGen' cfg $ forM_ apis $ \api ->
             case api of
                 APIConst c -> genConstant c >> blank
                 APIFunction f -> genFunction f >> blank

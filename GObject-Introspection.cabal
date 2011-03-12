@@ -15,7 +15,7 @@ Extra-source-files:
 Executable haskell-gi-dump
   main-is: Dump.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, gtk, glib
+  build-depends: base >= 4, containers, gtk, glib
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   other-modules:
@@ -43,7 +43,7 @@ Executable haskell-gi-dump
 Executable haskell-gi-generate
   main-is: Generate.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, gtk, glib, mtl
+  build-depends: base >= 4, containers, gtk, glib, mtl
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   other-modules:

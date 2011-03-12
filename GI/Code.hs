@@ -3,6 +3,7 @@ module GI.Code
     ( Code(..)
     , CodeTag(..)
     , CodeGen
+    , Config(..)
     , runCodeGen
     , runCodeGen'
     , codeToString
@@ -11,9 +12,12 @@ module GI.Code
     , line
     , blank
     , tag
+    , config
     ) where
 
+import Control.Monad.Reader
 import Control.Monad.Writer
+import qualified Data.Map as M
 
 data CodeTag
     = Import
@@ -35,26 +39,41 @@ instance Monoid Code where
     (Concat a b) `mappend` c = Concat a (Concat b c)
     a `mappend` b = Concat a b
 
-type CodeGen = Writer Code
+data Config = Config {
+  names :: M.Map String String }
 
-runCodeGen :: CodeGen a -> (a, Code)
-runCodeGen = runWriter
+type CodeGen = WriterT Code (Reader Config)
 
-runCodeGen' :: CodeGen () -> Code
-runCodeGen' = snd . runCodeGen
+runCodeGen :: Config -> CodeGen a -> (a, Code)
+runCodeGen config = flip runReader config . runWriterT
 
-tag :: CodeTag -> CodeGen () -> CodeGen ()
-tag t = tell . Tag t . runCodeGen'
+runCodeGen' :: Config -> CodeGen () -> Code
+runCodeGen' cfg = snd . runCodeGen cfg
+
+recurse :: CodeGen a -> CodeGen (a, Code)
+recurse cg = do
+    cfg <- config
+    return $ runCodeGen cfg cg
+
+tag :: CodeTag -> CodeGen a -> CodeGen a
+tag t cg = do
+    (x, code) <- recurse cg
+    tell $ Tag t code
+    return x
 
 line :: String -> CodeGen ()
 line = tell . Line
 
 blank = line ""
 
+config :: CodeGen Config
+config = lift ask
+
 indent :: CodeGen a -> CodeGen a
-indent cg = let (x, c) = runWriter cg
-             -- in CodeGen (x, Indent c)
-             in tell (Indent c) >> return x
+indent cg = do
+    (x, code) <- recurse cg
+    tell $ Indent code
+    return x
 
 codeToString c = concatMap (++ "\n") $ str 0 c []
     where str _ NoCode cont = cont
