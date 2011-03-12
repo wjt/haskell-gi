@@ -10,7 +10,7 @@ Stability:           Experimental
 Category:            Development
 Build-type:          Simple
 Cabal-version:       >=1.2
-Extra-source-files:  
+Extra-source-files:
 
 Executable haskell-gi-dump
   main-is: Dump.hs
