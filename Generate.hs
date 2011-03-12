@@ -35,7 +35,7 @@ optDescrs = [
        in opt { optRenames = (a, b) : optRenames opt }) "A=B")
     "specify a Haskell name for a C name"]
 
-printGError = handleGError (\(GError dom code msg) -> print (dom, code, msg))
+printGError = handleGError (\(GError dom code msg) -> putStrLn msg)
 
 processAPI options name = do
     apis <- loadAPI name
