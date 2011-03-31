@@ -13,6 +13,7 @@ import Data.Int
 import Data.List (intercalate, partition)
 import Data.Typeable (TypeRep, mkTyCon, mkTyConApp, typeOf)
 import Data.Word
+import qualified Data.Map as M
 
 import GI.API
 import GI.Code
@@ -101,14 +102,27 @@ escapeReserved s = s
 
 ucFirst (x:xs) = toUpper x : map toLower xs
 
-lowerName s =
-    case split '_' s of
-        [w] -> map toLower w
-        (w:ws) -> concat $ map toLower w : map ucFirst' ws
-    where ucFirst' "" = "_"
+lowerName s = do
+    cfg <- config
+
+    case M.lookup s (names cfg) of
+        Just s' -> return s'
+        Nothing -> return $ rename s
+
+    where rename s =
+              case split '_' s of
+                 [w] -> map toLower w
+                 (w:ws) -> concat $ map toLower w : map ucFirst' ws
+
+          ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
-upperName = map ucFirst . split '_'
+upperName s = do
+    cfg <- config
+
+    case M.lookup s (names cfg) of
+        Just s' -> return s'
+        Nothing -> return $ concatMap ucFirst . split '_' $ s
 
 prime = (++ "'")
 
@@ -118,7 +132,7 @@ mkBind name value = line $ name ++ " <- " ++ value
 
 genConstant :: Constant -> CodeGen ()
 genConstant (Constant name value) = do
-    let name' = lowerName name
+    name' <- lowerName name
     line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
     line $ name' ++ " = " ++ valueStr value
 
@@ -160,11 +174,11 @@ genCallable symbol callable = do
     wrapper
 
     where
-    name = lowerName $ callableName callable
     inArgs = filter ((== DirectionIn) . direction) $ args callable
     outArgs = filter ((== DirectionOut) . direction) $ args callable
     wrapper = do
         let argName' = escapeReserved . argName
+        name <- lowerName $ callableName callable
         tag TypeDecl signature
         tag Decl $ line $
             name ++ " " ++
@@ -176,9 +190,10 @@ genCallable symbol callable = do
                 concatMap (prime . (" " ++) . argName') (args callable)
             convertOut
     signature = do
+        name <- lowerName $ callableName callable
         line $ name ++ " ::"
         indent $ do
-            mapM_ (line . hArgStr) inArgs
+            mapM_ (\a -> line =<< hArgStr a) inArgs
             line result
     convertIn = forM_ (args callable) $ \arg ->
         if direction arg == DirectionIn
@@ -204,9 +219,9 @@ genCallable symbol callable = do
             (_ , []) -> line $ "return result'"
             (_ , _) -> line $
                 "return (" ++ intercalate ", " ("result'" : pps) ++ ")"
-    hArgStr arg =
+    hArgStr arg = do
         let start = (show $ haskellType $ argType arg) ++ " -> "
-         in padTo 40 start ++ "-- " ++ argName arg
+        upperName $ padTo 40 start ++ "-- " ++ argName arg
     result = show (io outType)
     outType =
         let hReturnType = haskellType $ returnType callable
@@ -273,5 +288,3 @@ genModule name apis = do
     where splitImports = partition isImport . codeToList
           isImport (Tag Import c) = True
           isImport _ = False
-
-
