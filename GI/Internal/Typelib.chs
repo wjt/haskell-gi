@@ -1,8 +1,8 @@
 module GI.Internal.Typelib
   ( getSearchPath
-
-  , load
+  , getLoadedNamespaces
   , getInfos
+  , load
   )
 where
 
@@ -36,6 +36,26 @@ getSearchPath = do
     paths <- {# call unsafe get_search_path #}
     pathPtrs <- readGSList paths
     mapM peekCString pathPtrs
+
+mapCStrings f ptr = do
+  str <- peek ptr
+  if str == nullPtr
+      then return []
+      else do
+          -- XXX: O(n) in size
+          x <- f str
+          xs <- mapCStrings f $ ptr `plusPtr` sizeOf (undefined :: Ptr CString)
+          return $ x : xs
+
+peekCStrings = mapCStrings peekCString
+
+getLoadedNamespaces :: IO [String]
+getLoadedNamespaces = do
+    nsPtrs <- {# call unsafe get_loaded_namespaces #} nullRepository
+    nss <- peekCStrings nsPtrs
+    mapCStrings free nsPtrs
+    free nsPtrs
+    return nss
 
 getInfos :: Typelib -> IO [BaseInfo]
 getInfos typelib = do
