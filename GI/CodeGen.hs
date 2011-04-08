@@ -37,6 +37,7 @@ haskellBasicType TGType   = typeOf (0 :: Word)
 haskellBasicType TUTF8    = typeOf ""
 haskellBasicType TFloat   = typeOf (0 :: Float)
 haskellBasicType TDouble  = typeOf (0 :: Double)
+haskellBasicType TUniChar = typeOf ('\0' :: Char)
 haskellBasicType t        = error $ "haskellBasicType: " ++ show t
 
 haskellType :: Type -> TypeRep
