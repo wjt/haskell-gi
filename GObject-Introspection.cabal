@@ -38,5 +38,6 @@ Executable haskell-gi
       GI.Internal.UnionInfo,
       GI.API,
       GI.Code,
+      GI.Type,
       GI.Value,
       GI.Util

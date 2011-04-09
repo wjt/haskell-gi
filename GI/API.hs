@@ -36,8 +36,9 @@ import GI.Internal.ObjectInfo
 import GI.Internal.PropertyInfo
 import GI.Internal.StructInfo
 import GI.Internal.TypeInfo
-import GI.Internal.Typelib (getInfos, load)
+import GI.Internal.Typelib (getInfos, getLoadedNamespaces, load)
 import GI.Internal.UnionInfo
+import GI.Type
 import GI.Value
 
 data Named a = Named { namespace :: String, name :: String, named :: a }
