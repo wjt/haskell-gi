@@ -92,6 +92,7 @@ mkBind name value = line $ name ++ " <- " ++ value
 genConstant :: Named Constant -> CodeGen ()
 genConstant n@(Named _ name (Constant value)) = do
     name' <- lowerName n
+    line $ "-- constant " ++ name
     line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
     line $ name' ++ " = " ++ valueStr value
 
@@ -129,7 +130,6 @@ hToF arg =
 genCallable :: String -> Named Callable -> CodeGen ()
 genCallable symbol n@(Named _ name callable) = do
     foreignImport symbol callable
-    blank
     wrapper
 
     where
@@ -192,7 +192,9 @@ genCallable symbol n@(Named _ name callable) = do
          in if returnMayBeNull callable then maybeType else justType
 
 genFunction :: Function -> CodeGen ()
-genFunction (Function symbol callable) = genCallable symbol callable
+genFunction (Function symbol callable) = do
+  line $ "-- function " ++ symbol
+  genCallable symbol callable
 
 genStruct :: (Named Struct) -> CodeGen ()
 genStruct (Named _ name (Struct fields)) = do
