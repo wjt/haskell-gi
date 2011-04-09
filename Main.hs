@@ -20,18 +20,31 @@ data Mode = GenerateCode | Dump
 
 data Options = Options {
   optMode :: Mode,
-  optRenames :: [(String, String)] }
+  optRenames :: [(String, String)],
+  optPrefixes :: [(String, String)] }
     deriving Show
 
-defaultOptions = Options { optMode = GenerateCode, optRenames = [] }
+defaultOptions = Options {
+  optMode = GenerateCode,
+  optRenames = [],
+  optPrefixes = [] }
+
+parseKeyValue s =
+  let (a, ('=':b)) = break (=='=') s
+   in (a, b)
 
 optDescrs :: [OptDescr (Options -> Options)]
 optDescrs = [
   Option "d" ["dump"] (NoArg $ \opt -> opt { optMode = Dump })
     "dump internal representation instead of generating code",
+  Option "p" ["prefix"] (ReqArg
+    (\arg opt ->
+      let (a, b) = parseKeyValue arg
+       in opt { optPrefixes = (a, b) : optPrefixes opt }) "A=B")
+     "specify the prefix for a particular namespace",
   Option "r" ["rename"] (ReqArg
     (\arg opt ->
-      let (a, ('=':b)) = break (=='=') arg
+      let (a, b) = parseKeyValue arg
        in opt { optRenames = (a, b) : optRenames opt }) "A=B")
     "specify a Haskell name for a C name"]
 
@@ -39,7 +52,9 @@ printGError = handleGError (\(GError dom code msg) -> putStrLn msg)
 
 processAPI options name = do
     apis <- loadAPI name
-    let cfg = Config $ M.fromList (optRenames options)
+    let cfg = Config {
+          prefixes = M.fromList (optPrefixes options),
+          names = M.fromList (optRenames options) }
 
     case optMode options of
         GenerateCode ->

@@ -40,6 +40,7 @@ instance Monoid Code where
     a `mappend` b = Concat a b
 
 data Config = Config {
+  prefixes :: M.Map String String,
   names :: M.Map String String }
 
 type CodeGen = WriterT Code (Reader Config)
