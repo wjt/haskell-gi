@@ -131,8 +131,8 @@ mkLet name value = line $ "let " ++ name ++ " = " ++ value
 
 mkBind name value = line $ name ++ " <- " ++ value
 
-genConstant :: Constant -> CodeGen ()
-genConstant (Constant name value) = do
+genConstant :: Named Constant -> CodeGen ()
+genConstant (Named _ name (Constant value)) = do
     name' <- lowerName name
     line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
     line $ name' ++ " = " ++ valueStr value
@@ -168,8 +168,8 @@ hToF arg =
     hToF' _ _ = error $
         "don't know how to convert " ++ show hType ++ " to " ++ show fType
 
-genCallable :: String -> Callable -> CodeGen ()
-genCallable symbol callable = do
+genCallable :: String -> Named Callable -> CodeGen ()
+genCallable symbol (Named _ name callable) = do
     foreignImport symbol callable
     blank
     wrapper
@@ -179,7 +179,7 @@ genCallable symbol callable = do
     outArgs = filter ((== DirectionOut) . direction) $ args callable
     wrapper = do
         let argName' = escapeReserved . argName
-        name <- lowerName $ callableName callable
+        name <- lowerName name
         tag TypeDecl signature
         tag Decl $ line $
             name ++ " " ++
@@ -191,7 +191,7 @@ genCallable symbol callable = do
                 concatMap (prime . (" " ++) . argName') (args callable)
             convertOut
     signature = do
-        name <- lowerName $ callableName callable
+        name <- lowerName name
         line $ name ++ " ::"
         indent $ do
             mapM_ (\a -> line =<< hArgStr a) inArgs
@@ -236,28 +236,28 @@ genCallable symbol callable = do
 genFunction :: Function -> CodeGen ()
 genFunction (Function symbol callable) = genCallable symbol callable
 
-genStruct :: Struct -> CodeGen ()
-genStruct (Struct name fields) = do
+genStruct :: (Named Struct) -> CodeGen ()
+genStruct (Named _ name (Struct fields)) = do
   line $ "-- struct " ++ name
   line $ "data " ++ name ++ " = " ++ name ++ " (Ptr " ++ name ++ ")"
 
-genEnum :: Enumeration -> CodeGen ()
-genEnum (Enumeration name fields) = do
+genEnum :: Named Enumeration -> CodeGen ()
+genEnum (Named _ name (Enumeration fields)) = do
   -- XXX
   line $ "-- enum " ++ name
   line $ "data " ++ name ++ " = " ++ name
 
-genFlags :: Flags -> CodeGen ()
-genFlags (Flags (Enumeration name fields)) = do
+genFlags :: Named Flags -> CodeGen ()
+genFlags (Named _ name (Flags (Enumeration fields))) = do
   -- XXX
   line $ "-- flags " ++ name
   line $ "data " ++ name ++ " = " ++ name
 
 genCallback :: Callback -> CodeGen ()
-genCallback (Callback c) = do
-  line $ "-- callback " ++ callableName c
+genCallback (Callback (Named _ name _)) = do
+  line $ "-- callback " ++ name
   -- XXX
-  line $ "type " ++ callableName c ++ " =  () -> ()"
+  line $ "type " ++ name ++ " =  () -> ()"
 
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do

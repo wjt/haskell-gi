@@ -1,6 +1,7 @@
 
 module GI.API
     ( API(..)
+    , Named(..)
     , Constant(..)
     , Arg(..)
     , Callable(..)
@@ -39,35 +40,41 @@ import GI.Internal.Typelib (getInfos, load)
 import GI.Internal.UnionInfo
 import GI.Value
 
+data Named a = Named { namespace :: String, name :: String, named :: a }
+    deriving Show
+
+toNamed :: BaseInfoClass bi => bi -> a -> Named a
+toNamed bi x =
+   let namespace = baseInfoNamespace $ baseInfo bi
+       name = baseInfoName $ baseInfo bi
+    in Named namespace name x
+
 data Constant = Constant {
-    constName :: String,
     constValue :: Value }
     deriving Show
 
-toConstant :: ConstantInfo -> Constant
+toConstant :: ConstantInfo -> Named Constant
 toConstant ci =
-    let name = baseInfoName $ baseInfo ci
-        typeInfo = constantInfoType ci
+    let typeInfo = constantInfoType ci
         arg = constantInfoValue ci
         value = fromArgument typeInfo arg
-     in Constant name value
+     in toNamed ci $ Constant value
 
 data Enumeration = Enumeration {
-    enumName :: String,
     enumValues :: [(String, Word64)] }
     deriving Show
 
-toEnumeration :: EnumInfo -> Enumeration
-toEnumeration ei =
-    Enumeration (baseInfoName . baseInfo $ ei)
-        (map (\vi -> (baseInfoName . baseInfo $ vi, valueInfoValue vi))
-            (enumInfoValues ei))
+toEnumeration :: EnumInfo -> Named Enumeration
+toEnumeration ei = toNamed ei $ Enumeration $
+    (map (\vi -> (baseInfoName . baseInfo $ vi, valueInfoValue vi))
+        (enumInfoValues ei))
 
 data Flags = Flags Enumeration
     deriving Show
 
-toFlags :: EnumInfo -> Flags
-toFlags = Flags . toEnumeration
+toFlags :: EnumInfo -> Named Flags
+toFlags ei = let Named ns n x = toEnumeration ei
+              in Named ns n (Flags x)
 
 data Arg = Arg {
     argName :: String,
@@ -86,7 +93,6 @@ toArg ai =
         (argInfoOwnershipTransfer ai)
 
 data Callable = Callable {
-    callableName :: String,
     returnType :: Type,
     returnMayBeNull :: Bool,
     returnTransfer :: Transfer,
@@ -94,13 +100,12 @@ data Callable = Callable {
     args :: [Arg] }
     deriving Show
 
-toCallable :: CallableInfo -> Callable
+toCallable :: CallableInfo -> Named Callable
 toCallable ci =
     let returnType = callableInfoReturnType ci
         argType = typeFromTypeInfo returnType
         ais = callableInfoArgs ci
-        name = baseInfoName . baseInfo $ ci
-        in Callable name argType
+        in toNamed ci $ Callable argType
                (callableInfoMayReturnNull ci)
                (callableInfoCallerOwns ci)
                (callableInfoReturnAttributes ci)
@@ -108,7 +113,7 @@ toCallable ci =
 
 data Function = Function {
     fnSymbol :: String,
-    fnCallable :: Callable }
+    fnCallable :: Named Callable }
     deriving Show
 
 toFunction :: FunctionInfo -> Function
@@ -147,14 +152,11 @@ toField fi =
         (fieldInfoFlags fi)
 
 data Struct = Struct {
-    structName :: String,
     fields :: [Field] }
     deriving Show
 
-toStruct :: StructInfo -> Struct
-toStruct si =
-    Struct (baseInfoName . baseInfo $ si)
-        (map toField $ structInfoFields si)
+toStruct :: StructInfo -> Named Struct
+toStruct si = toNamed si $ Struct (map toField $ structInfoFields si)
 
 -- XXX: Capture alignment and method info.
 
@@ -163,55 +165,53 @@ data Union = Union {
     unionFields :: [Field] }
     deriving Show
 
-toUnion :: UnionInfo -> Union
+toUnion :: UnionInfo -> Named Union
 toUnion ui =
-    Union (baseInfoName . baseInfo $ ui)
+    toNamed ui $ Union (baseInfoName . baseInfo $ ui)
         (map toField $ unionInfoFields ui)
 
-data Callback = Callback Callable
+data Callback = Callback (Named Callable)
     deriving Show
 
 data Interface = Interface {
-    ifName :: String,
     ifMethods :: [Function],
-    ifConstants :: [Constant],
+    ifConstants :: [Named Constant],
     ifProperties :: [Property] }
     deriving Show
 
-toInterface :: InterfaceInfo -> Interface
+toInterface :: InterfaceInfo -> Named Interface
 toInterface ii =
-    Interface (baseInfoName . baseInfo $ ii)
+    toNamed ii $ Interface
         (map toFunction $ interfaceInfoMethods $ ii)
         (map toConstant $ interfaceInfoConstants $ ii)
         (map toProperty $ interfaceInfoProperties $ ii)
 
 data Object = Object {
-    objName :: String,
     objFields :: [Field],
     objMethods :: [Function],
     -- objSignals :: [Signal],
     objProperties :: [Property] }
     deriving Show
 
-toObject :: ObjectInfo -> Object
+toObject :: ObjectInfo -> Named Object
 toObject oi =
-    Object (baseInfoName . baseInfo $ oi)
+    toNamed oi $ Object
         (map toField $ objectInfoFields oi)
         (map toFunction $ objectInfoMethods oi)
         (map toProperty $ objectInfoProperties oi)
 
 data API
-    = APIConst Constant
+    = APIConst (Named Constant)
     | APIFunction Function
     | APICallback Callback
     -- XXX: These plus APIUnion should have their gTypes exposed (via a
     -- binding of GIRegisteredTypeInfo.
-    | APIEnum Enumeration
-    | APIFlags Flags
-    | APIInterface Interface
-    | APIObject Object
-    | APIStruct Struct
-    | APIUnion Union
+    | APIEnum (Named Enumeration)
+    | APIFlags (Named Flags)
+    | APIInterface (Named Interface)
+    | APIObject (Named Object)
+    | APIStruct (Named Struct)
+    | APIUnion (Named Union)
     deriving Show
 
 toAPI :: BaseInfoClass bi => bi -> API
