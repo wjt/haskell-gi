@@ -52,22 +52,31 @@ escapeReserved s = s
 
 ucFirst (x:xs) = toUpper x : map toLower xs
 
-lowerName s = do
+lowerName (Named ns s _) = do
     cfg <- config
 
     case M.lookup s (names cfg) of
         Just s' -> return s'
-        Nothing -> return $ rename s
+        Nothing -> do
+          let ss = split '_' s
+          ss' <- addPrefix ss
+          return . concat . rename $ ss'
 
-    where rename s =
-              case split '_' s of
-                 [w] -> map toLower w
-                 (w:ws) -> concat $ map toLower w : map ucFirst' ws
+    where addPrefix ss = do
+              cfg <- config
+
+              case M.lookup ns (prefixes cfg) of
+                  Just p -> return $ p : ss
+                  Nothing -> error $
+                      "no prefix defined for namespace " ++ show ns
+
+          rename [w] = [map toLower w]
+          rename (w:ws) = map toLower w : map ucFirst' ws
 
           ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
-upperName s = do
+upperName (Named ns s _) = do
     cfg <- config
 
     case M.lookup s (names cfg) of
@@ -81,8 +90,8 @@ mkLet name value = line $ "let " ++ name ++ " = " ++ value
 mkBind name value = line $ name ++ " <- " ++ value
 
 genConstant :: Named Constant -> CodeGen ()
-genConstant (Named _ name (Constant value)) = do
-    name' <- lowerName name
+genConstant n@(Named _ name (Constant value)) = do
+    name' <- lowerName n
     line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
     line $ name' ++ " = " ++ valueStr value
 
@@ -118,7 +127,7 @@ hToF arg =
         "don't know how to convert " ++ show hType ++ " to " ++ show fType
 
 genCallable :: String -> Named Callable -> CodeGen ()
-genCallable symbol (Named _ name callable) = do
+genCallable symbol n@(Named _ name callable) = do
     foreignImport symbol callable
     blank
     wrapper
@@ -128,7 +137,7 @@ genCallable symbol (Named _ name callable) = do
     outArgs = filter ((== DirectionOut) . direction) $ args callable
     wrapper = do
         let argName' = escapeReserved . argName
-        name <- lowerName name
+        name <- lowerName n
         tag TypeDecl signature
         tag Decl $ line $
             name ++ " " ++
@@ -140,7 +149,7 @@ genCallable symbol (Named _ name callable) = do
                 concatMap (prime . (" " ++) . argName') (args callable)
             convertOut
     signature = do
-        name <- lowerName name
+        name <- lowerName n
         line $ name ++ " ::"
         indent $ do
             mapM_ (\a -> line =<< hArgStr a) inArgs
