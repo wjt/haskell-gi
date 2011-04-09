@@ -222,7 +222,7 @@ genCallable symbol callable = do
                 "return (" ++ intercalate ", " ("result'" : pps) ++ ")"
     hArgStr arg = do
         let start = (show $ haskellType $ argType arg) ++ " -> "
-        upperName $ padTo 40 start ++ "-- " ++ argName arg
+        return $ padTo 40 start ++ "-- " ++ argName arg
     result = show (io outType)
     outType =
         let hReturnType = haskellType $ returnType callable
