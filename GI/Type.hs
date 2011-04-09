@@ -63,6 +63,7 @@ basicTypeFromTypeTag TypeTagDouble = Just TDouble
 basicTypeFromTypeTag TypeTagUnichar = Just TUniChar
 basicTypeFromTypeTag TypeTagUtf8 = Just TUTF8
 basicTypeFromTypeTag TypeTagFilename = Just TFileName
+basicTypeFromTypeTag TypeTagGtype = Just TGType
 basicTypeFromTypeTag _ = Nothing
 
 typeFromTypeInfo :: TypeInfo -> Type
