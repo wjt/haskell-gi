@@ -52,6 +52,14 @@ escapeReserved s = s
 
 ucFirst (x:xs) = toUpper x : map toLower xs
 
+getPrefix :: String -> CodeGen String
+getPrefix ns = do
+    cfg <- config
+    case M.lookup ns (prefixes cfg) of
+        Just p -> return p
+        Nothing -> error $
+            "no prefix defined for namespace " ++ show ns
+
 lowerName (Named ns s _) = do
     cfg <- config
 
@@ -63,12 +71,8 @@ lowerName (Named ns s _) = do
           return . concat . rename $ ss'
 
     where addPrefix ss = do
-              cfg <- config
-
-              case M.lookup ns (prefixes cfg) of
-                  Just p -> return $ p : ss
-                  Nothing -> error $
-                      "no prefix defined for namespace " ++ show ns
+              prefix <- getPrefix ns
+              return $ prefix : ss
 
           rename [w] = [map toLower w]
           rename (w:ws) = map toLower w : map ucFirst' ws
