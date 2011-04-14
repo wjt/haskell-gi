@@ -6,13 +6,11 @@ module GI.CodeGen
     ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (forM, forM_)
+import Control.Monad (forM_)
 import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
-import Data.Int
 import Data.List (intercalate, partition)
-import Data.Typeable (TypeRep, mkTyCon, mkTyConApp, typeOf)
-import Data.Word
+import Data.Typeable (TypeRep)
 import qualified Data.Map as M
 
 import GI.API
@@ -51,6 +49,7 @@ escapeReserved "data" = "data_"
 escapeReserved s = s
 
 ucFirst (x:xs) = toUpper x : map toLower xs
+ucFirst "" = error "ucFirst: empty string"
 
 getPrefix :: String -> CodeGen String
 getPrefix ns = do
@@ -76,6 +75,7 @@ lowerName (Named ns s _) = do
 
           rename [w] = [map toLower w]
           rename (w:ws) = map toLower w : map ucFirst' ws
+          rename [] = error "rename: empty list"
 
           ucFirst' "" = "_"
           ucFirst' x = ucFirst x
@@ -158,7 +158,7 @@ hToF arg = do
         "don't know how to convert " ++ hType ++ " to " ++ fType
 
 genCallable :: String -> Named Callable -> CodeGen ()
-genCallable symbol n@(Named _ name callable) = do
+genCallable symbol n@(Named _ _ callable) = do
     foreignImport symbol callable
     wrapper
 
@@ -230,24 +230,25 @@ genFunction (Function symbol callable) = do
   genCallable symbol callable
 
 genStruct :: (Named Struct) -> CodeGen ()
-genStruct n@(Named _ name (Struct fields)) = do
+genStruct n@(Named _ name (Struct _fields)) = do
   line $ "-- struct " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr " ++ name' ++ ")"
+  -- XXX: Generate code for fields.
 
 genEnum :: Named Enumeration -> CodeGen ()
-genEnum n@(Named _ name (Enumeration fields)) = do
-  -- XXX
+genEnum n@(Named _ name (Enumeration _fields)) = do
   line $ "-- enum " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = " ++ name'
+  -- XXX: Generate code for fields.
 
 genFlags :: Named Flags -> CodeGen ()
-genFlags n@(Named _ name (Flags (Enumeration fields))) = do
-  -- XXX
+genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
   line $ "-- flags " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = " ++ name'
+  -- XXX: Generate code for fields.
 
 genCallback :: Callback -> CodeGen ()
 genCallback (Callback (Named _ name _)) = do
