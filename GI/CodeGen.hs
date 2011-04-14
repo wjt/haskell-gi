@@ -85,7 +85,10 @@ upperName (Named ns s _) = do
 
     case M.lookup s (names cfg) of
         Just s' -> return s'
-        Nothing -> return $ concatMap ucFirst . split '_' $ s
+        Nothing -> return $ concatMap ucFirst' . split '_' $ s
+
+    where ucFirst' "" = "_"
+          ucFirst' x = ucFirst x
 
 prime = (++ "'")
 
