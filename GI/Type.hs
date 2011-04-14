@@ -41,7 +41,7 @@ data BasicType
 data Type
     = TBasicType BasicType
     | TArray Type
-    | TInterface String
+    | TInterface String String
     | TGList Type
     | TGSList Type
     | TGHash Type Type
@@ -73,8 +73,11 @@ typeFromTypeInfo ti =
       Nothing -> case tag of
            TypeTagArray -> TArray p1
            -- TypeTagInterface -> TInterface (typeTagToString . typeInfoTag $ ti)
-           TypeTagInterface -> TInterface $
-               baseInfoName . baseInfo . typeInfoInterface $ ti
+           TypeTagInterface ->
+               let bi = baseInfo . typeInfoInterface $ ti
+                   namespace = baseInfoNamespace bi
+                   name = baseInfoName bi
+                in TInterface namespace name
            TypeTagGlist -> TGList p1
            TypeTagGslist -> TGSList p1
            TypeTagGhash -> TGHash p1 p2
@@ -118,7 +121,7 @@ haskellType :: Type -> TypeRep
 haskellType (TBasicType bt) = haskellBasicType bt
 haskellType t@(TArray _ ) = foreignType t
 haskellType t@(TGHash _ _) = foreignType t
-haskellType t@(TInterface _ ) = foreignType t
+haskellType t@(TInterface _ _) = foreignType t
 haskellType t@TError = foreignType t
 haskellType t@(TGList _) = foreignType t
 haskellType t@(TGSList _) = foreignType t
@@ -139,5 +142,5 @@ foreignType (TGSList a) = "SList" `con` [foreignType a]
 -- XXX: Possibly nonsense. Perhaps the interface name needs to be qualified,
 -- and its existence (in the typelib we're generating code for, or some other
 -- typelib) verified.
-foreignType (TInterface s) = s `con` []
+foreignType (TInterface _ s) = s `con` []
 foreignType t = error $ "foreignType: " ++ show t

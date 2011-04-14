@@ -201,18 +201,18 @@ genFunction (Function symbol callable) = do
   genCallable symbol callable
 
 genStruct :: (Named Struct) -> CodeGen ()
-genStruct (Named _ name (Struct fields)) = do
+genStruct n@(Named _ name (Struct fields)) = do
   line $ "-- struct " ++ name
   line $ "data " ++ name ++ " = " ++ name ++ " (Ptr " ++ name ++ ")"
 
 genEnum :: Named Enumeration -> CodeGen ()
-genEnum (Named _ name (Enumeration fields)) = do
+genEnum n@(Named _ name (Enumeration fields)) = do
   -- XXX
   line $ "-- enum " ++ name
   line $ "data " ++ name ++ " = " ++ name
 
 genFlags :: Named Flags -> CodeGen ()
-genFlags (Named _ name (Flags (Enumeration fields))) = do
+genFlags n@(Named _ name (Flags (Enumeration fields))) = do
   -- XXX
   line $ "-- flags " ++ name
   line $ "data " ++ name ++ " = " ++ name
