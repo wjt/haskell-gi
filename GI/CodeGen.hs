@@ -85,9 +85,16 @@ upperName (Named ns s _) = do
 
     case M.lookup s (names cfg) of
         Just s' -> return s'
-        Nothing -> return $ concatMap ucFirst' . split '_' $ s
+        Nothing -> do
+            let ss = split '_' s
+            ss' <- addPrefix ss
+            return . concatMap ucFirst' $ ss'
 
-    where ucFirst' "" = "_"
+    where addPrefix ss = do
+              prefix <- getPrefix ns
+              return $ prefix : ss
+
+          ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
 haskellType' :: Type -> CodeGen TypeRep
