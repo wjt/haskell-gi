@@ -1,8 +1,6 @@
 module Main where
 
-import Control.Monad (forM_)
 import System.Console.GetOpt
-import System.Environment (getArgs)
 import System.Exit
 import System.IO (hPutStr, hPutStrLn, stderr)
 
@@ -48,7 +46,7 @@ optDescrs = [
        in opt { optRenames = (a, b) : optRenames opt }) "A=B")
     "specify a Haskell name for a C name"]
 
-printGError = handleGError (\(GError dom code msg) -> putStrLn msg)
+printGError = handleGError (\(GError _dom _code msg) -> putStrLn msg)
 
 processAPI options name = do
     apis <- loadAPI name
@@ -62,8 +60,7 @@ processAPI options name = do
         Dump -> mapM_ print apis
 
 main = printGError $ do
-    initGUI
-    args <- getArgs
+    args <- initGUI
     let (actions, nonOptions, errors) = getOpt RequireOrder optDescrs args
         options  = foldl (.) id actions defaultOptions
 
