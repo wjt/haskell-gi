@@ -119,12 +119,15 @@ haskellBasicType t        = error $ "haskellBasicType: " ++ show t
 
 haskellType :: Type -> TypeRep
 haskellType (TBasicType bt) = haskellBasicType bt
-haskellType t@(TArray _ ) = foreignType t
-haskellType t@(TGHash _ _) = foreignType t
-haskellType t@(TInterface _ _) = foreignType t
-haskellType t@TError = foreignType t
-haskellType t@(TGList _) = foreignType t
-haskellType t@(TGSList _) = foreignType t
+haskellType (TArray a) = "GArray" `con` [haskellType a]
+haskellType (TGList a) = "GList" `con` [haskellType a]
+haskellType (TGSList a) = "GSList" `con` [haskellType a]
+haskellType (TGHash a b) = "GHashTable" `con` [haskellType a, haskellType b]
+haskellType TError = "GError" `con` []
+-- XXX: Possibly nonsense. Perhaps the interface name needs to be
+-- qualified, and its existence (in the typelib we're generating code
+-- for, or some other typelib) verified.
+haskellType (TInterface _ s) = s `con` []
 haskellType t = error $ "haskellType: " ++ show t
 
 foreignBasicType TBoolean = "CInt" `con` []
@@ -134,13 +137,10 @@ foreignBasicType t        = haskellBasicType t
 
 foreignType :: Type -> TypeRep
 foreignType (TBasicType t) = foreignBasicType t
-foreignType (TArray a) = "Array" `con` [foreignType a]
-foreignType (TGHash a b) = "HashTable" `con` [foreignType a, foreignType b]
-foreignType TError = "Error" `con` []
-foreignType (TGList a) = "List" `con` [foreignType a]
-foreignType (TGSList a) = "SList" `con` [foreignType a]
--- XXX: Possibly nonsense. Perhaps the interface name needs to be qualified,
--- and its existence (in the typelib we're generating code for, or some other
--- typelib) verified.
-foreignType (TInterface _ s) = s `con` []
+foreignType t@(TArray _ ) = haskellType t
+foreignType t@(TGList _) = haskellType t
+foreignType t@(TGSList _) = haskellType t
+foreignType t@(TGHash _ _) = haskellType t
+foreignType t@TError = haskellType t
+foreignType t@(TInterface _ _) = haskellType t
 foreignType t = error $ "foreignType: " ++ show t
