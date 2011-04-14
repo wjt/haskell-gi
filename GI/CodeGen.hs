@@ -90,6 +90,18 @@ upperName (Named ns s _) = do
     where ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
+haskellType' :: Type -> CodeGen TypeRep
+haskellType' (TInterface ns n) = do
+    prefix <- getPrefix ns
+    return $ haskellType (TInterface "!!!" (ucFirst prefix ++ n))
+haskellType' t = return $ haskellType t
+
+foreignType' :: Type -> CodeGen TypeRep
+foreignType' (TInterface ns n) = do
+    prefix <- getPrefix ns
+    return $ foreignType (TInterface undefined (ucFirst prefix ++ n))
+foreignType' t = return $ foreignType t
+
 prime = (++ "'")
 
 mkLet name value = line $ "let " ++ name ++ " = " ++ value
@@ -99,40 +111,44 @@ mkBind name value = line $ name ++ " <- " ++ value
 genConstant :: Named Constant -> CodeGen ()
 genConstant n@(Named _ name (Constant value)) = do
     name' <- lowerName n
+    ht <- haskellType' $ valueType value
     line $ "-- constant " ++ name
-    line $ name' ++ " :: " ++ (show $ haskellType $ valueType value)
+    line $ name' ++ " :: " ++ show ht
     line $ name' ++ " = " ++ valueStr value
 
 foreignImport :: String -> Callable -> CodeGen ()
 foreignImport symbol callable = tag Import $ do
     line first
     indent $ do
-        mapM_ (line . fArgStr) (args callable)
-        line last
+        mapM_ (\a -> line =<< fArgStr a) (args callable)
+        line =<< last
     where
     first = "foreign import ccall \"" ++ symbol ++ "\" " ++
                 symbol ++ " :: "
-    fArgStr arg =
-        let start = (show $ foreignType $ argType arg) ++ " -> "
-         in padTo 40 start ++ "-- " ++ argName arg
-    last = show $ io $ foreignType $ returnType callable
+    fArgStr arg = do
+        ft <- foreignType' $ argType arg
+        let start = show ft ++ " -> "
+        return $ padTo 40 start ++ "-- " ++ argName arg
+    last = show <$> io <$> foreignType' (returnType callable)
 
-hToF arg =
+hToF :: Arg -> CodeGen ()
+hToF arg = do
+    hType <- haskellType' $ argType arg
+    fType <- foreignType' $ argType arg
     if hType == fType
         then mkLet' "id"
         else hToF' (show hType) (show fType)
 
     where
     name = escapeReserved $ argName arg
-    hType = haskellType $ argType arg
-    fType = foreignType $ argType arg
     mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
     mkBind' conv = mkBind (prime name) (conv ++ " `fmap` " ++ name)
     hToF' "[Char]" "CString" = mkBind' "newCString"
     hToF' "Word"   "GType"   = mkLet' "fromIntegral"
     hToF' "Bool"   "CInt"    = mkLet' "fromEnum"
-    hToF' _ _ = error $
-        "don't know how to convert " ++ show hType ++ " to " ++ show fType
+    hToF' "[Char]" "Ptr CString" = mkBind' "bullshit"
+    hToF' hType fType = error $
+        "don't know how to convert " ++ hType ++ " to " ++ fType
 
 genCallable :: String -> Named Callable -> CodeGen ()
 genCallable symbol n@(Named _ name callable) = do
@@ -160,13 +176,14 @@ genCallable symbol n@(Named _ name callable) = do
         line $ name ++ " ::"
         indent $ do
             mapM_ (\a -> line =<< hArgStr a) inArgs
-            line result
-    convertIn = forM_ (args callable) $ \arg ->
+            result >>= line
+    convertIn = forM_ (args callable) $ \arg -> do
+        ft <- foreignType' $ argType arg
         if direction arg == DirectionIn
             then hToF arg
             else mkBind (prime $ argName arg) $
                      "malloc :: " ++
-                     show (io $ ptr $ foreignType $ argType arg)
+                     show (io $ ptr ft)
     -- XXX: Should create ForeignPtrs for pointer results.
     -- XXX: Check argument transfer.
     convertOut = do
@@ -179,24 +196,26 @@ genCallable symbol n@(Named _ name callable) = do
                     mkBind (prime $ prime $ argName arg) $
                         "peek " ++ (prime $ argName arg)
         let pps = map (prime . prime . argName) outArgs
-        case (show outType, outArgs) of
+        out <- outType
+        case (show out, outArgs) of
             ("()", []) -> line $ "return ()"
             ("()", _) -> line $ "return (" ++ intercalate ", " pps ++ ")"
             (_ , []) -> line $ "return result'"
             (_ , _) -> line $
                 "return (" ++ intercalate ", " ("result'" : pps) ++ ")"
     hArgStr arg = do
-        let start = (show $ haskellType $ argType arg) ++ " -> "
+        ht <- haskellType' $ argType arg
+        let start = show ht ++ " -> "
         return $ padTo 40 start ++ "-- " ++ argName arg
-    result = show (io outType)
-    outType =
-        let hReturnType = haskellType $ returnType callable
-            hOutArgTypes = map (haskellType . argType) outArgs
-            justType = case outArgs of
+    result = show <$> io <$> outType
+    outType = do
+        hReturnType <- haskellType' $ returnType callable
+        hOutArgTypes <- mapM (haskellType' . argType) outArgs
+        let justType = case outArgs of
                 [] -> hReturnType
                 _ -> "(,)" `con` (hReturnType : hOutArgTypes)
             maybeType = "Maybe" `con` [justType]
-         in if returnMayBeNull callable then maybeType else justType
+        return $ if returnMayBeNull callable then maybeType else justType
 
 genFunction :: Function -> CodeGen ()
 genFunction (Function symbol callable) = do
