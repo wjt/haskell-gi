@@ -12,8 +12,6 @@ import Foreign
 import Foreign.C
 
 import GI.Type
-import GI.Internal.BaseInfo
-import GI.Internal.TypeInfo
 import GI.Internal.Types
 
 #include <girepository.h>
@@ -54,9 +52,11 @@ valueType (VUTF8 _)       = TBasicType TUTF8
 valueType (VFileName _)   = TBasicType TFileName
 
 fromArgument :: TypeInfo -> Argument -> Value
-fromArgument typeInfo (Argument arg) =
-    case typeFromTypeInfo typeInfo of
+fromArgument ti (Argument arg) =
+    case typeFromTypeInfo ti of
         TBasicType t -> unsafePerformIO $ basic t
+        t -> error $ "don't know how to decode argument of type " ++
+                show t
 
     where
 
