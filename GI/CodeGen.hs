@@ -232,19 +232,22 @@ genFunction (Function symbol callable) = do
 genStruct :: (Named Struct) -> CodeGen ()
 genStruct n@(Named _ name (Struct fields)) = do
   line $ "-- struct " ++ name
-  line $ "data " ++ name ++ " = " ++ name ++ " (Ptr " ++ name ++ ")"
+  name' <- upperName n
+  line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr " ++ name' ++ ")"
 
 genEnum :: Named Enumeration -> CodeGen ()
 genEnum n@(Named _ name (Enumeration fields)) = do
   -- XXX
   line $ "-- enum " ++ name
-  line $ "data " ++ name ++ " = " ++ name
+  name' <- upperName n
+  line $ "data " ++ name' ++ " = " ++ name'
 
 genFlags :: Named Flags -> CodeGen ()
 genFlags n@(Named _ name (Flags (Enumeration fields))) = do
   -- XXX
   line $ "-- flags " ++ name
-  line $ "data " ++ name ++ " = " ++ name
+  name' <- upperName n
+  line $ "data " ++ name' ++ " = " ++ name'
 
 genCallback :: Callback -> CodeGen ()
 genCallback (Callback (Named _ name _)) = do
