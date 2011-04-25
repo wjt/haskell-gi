@@ -6,7 +6,8 @@ import System.IO (hPutStr, hPutStrLn, stderr)
 
 import qualified Data.Map as M
 
-import Graphics.UI.Gtk
+--import Graphics.UI.Gtk
+import System.Glib.Initialize
 import System.Glib.GError
 
 import GI.API (loadAPI)
@@ -60,7 +61,7 @@ processAPI options name = do
         Dump -> mapM_ print apis
 
 main = printGError $ do
-    args <- initGUI
+    args <- initArgs
     let (actions, nonOptions, errors) = getOpt RequireOrder optDescrs args
         options  = foldl (.) id actions defaultOptions
 
