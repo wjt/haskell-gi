@@ -14,7 +14,7 @@ import GI.API (loadAPI)
 import GI.Code (Config(..), codeToString, runCodeGen')
 import GI.CodeGen (genModule)
 
-data Mode = GenerateCode | Dump
+data Mode = GenerateCode | Dump | Help
   deriving Show
 
 data Options = Options {
@@ -34,6 +34,8 @@ parseKeyValue s =
 
 optDescrs :: [OptDescr (Options -> Options)]
 optDescrs = [
+  Option "h" ["help"] (NoArg $ \opt -> opt { optMode = Help })
+    "print this gentle help text",
   Option "d" ["dump"] (NoArg $ \opt -> opt { optMode = Dump })
     "dump internal representation instead of generating code",
   Option "p" ["prefix"] (ReqArg
@@ -47,6 +49,11 @@ optDescrs = [
        in opt { optRenames = (a, b) : optRenames opt }) "A=B")
     "specify a Haskell name for a C name"]
 
+showHelp = concat $ map optAsLine optDescrs
+    where optAsLine (Option flag (long:_) _ desc) = "  -" ++ flag ++
+                                                    "|--" ++ long ++
+                                                    "\t" ++ desc ++ "\n"
+
 printGError = handleGError (\(GError _dom _code msg) -> putStrLn msg)
 
 processAPI options name = do
@@ -59,6 +66,7 @@ processAPI options name = do
         GenerateCode ->
             putStrLn $ codeToString $ runCodeGen' cfg $ genModule name apis
         Dump -> mapM_ print apis
+        Help -> putStr showHelp
 
 main = printGError $ do
     args <- initArgs
@@ -75,4 +83,5 @@ main = printGError $ do
         [name] -> processAPI options name
         _ -> do
             hPutStrLn stderr "usage: haskell-gi [options] package"
+            hPutStr stderr showHelp
             exitFailure
