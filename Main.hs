@@ -50,9 +50,8 @@ optDescrs = [
     "specify a Haskell name for a C name"]
 
 showHelp = concat $ map optAsLine optDescrs
-    where optAsLine (Option flag (long:_) _ desc) = "  -" ++ flag ++
-                                                    "|--" ++ long ++
-                                                    "\t" ++ desc ++ "\n"
+  where optAsLine (Option flag (long:_) _ desc) =
+          "  -" ++ flag ++ "|--" ++ long ++ "\t" ++ desc ++ "\n"
 
 printGError = handleGError (\(GError _dom _code msg) -> putStrLn msg)
 
