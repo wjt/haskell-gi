@@ -15,10 +15,11 @@ Extra-source-files:
 Executable haskell-gi
   main-is: Main.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, containers, gtk, glib, mtl
+  build-depends: base >= 4, containers, glib, mtl
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   other-modules:
+      System.Glib.Initialize,
       GI.Internal.Types,
       GI.Internal.ArgInfo,
       GI.Internal.BaseInfo,
