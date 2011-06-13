@@ -52,6 +52,7 @@ optDescrs = [
 showHelp = concat $ map optAsLine optDescrs
   where optAsLine (Option flag (long:_) _ desc) =
           "  -" ++ flag ++ "|--" ++ long ++ "\t" ++ desc ++ "\n"
+        optAsLine _ = error "showHelp"
 
 printGError = handleGError (\(GError _dom _code msg) -> putStrLn msg)
 
