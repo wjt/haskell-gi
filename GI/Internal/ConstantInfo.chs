@@ -27,6 +27,6 @@ constantInfoType ci = unsafePerformIO $ TypeInfo <$> castPtr <$>
 constantInfoValue :: ConstantInfoClass const => const -> Argument
 constantInfoValue ci = unsafePerformIO $ do
     ptr <- mallocBytes {# sizeof GIArgument #}
-    -- XXX: We ignore the return value here. Do we need it for anything?
-    {# call get_value #} (stupidCast ci) (Argument ptr)
+    -- XXX: When do we need this size value?
+    _size <- {# call get_value #} (stupidCast ci) (Argument ptr)
     return (Argument ptr)
