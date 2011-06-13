@@ -13,7 +13,6 @@ data ParamFlag = ParamReadable
                | ParamConstructOnly
                | ParamLaxValidation
                | ParamStaticName
-               | ParamPrivate
                | ParamStaticNick
                | ParamStaticBlurb
                | ParamDeprecated
