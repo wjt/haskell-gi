@@ -36,6 +36,9 @@ data Code
 instance Monoid Code where
     mempty = NoCode
 
+    NoCode `mappend` NoCode = NoCode
+    x `mappend` NoCode = x
+    NoCode `mappend` x = x
     (Concat a b) `mappend` c = Concat a (Concat b c)
     a `mappend` b = Concat a b
 
