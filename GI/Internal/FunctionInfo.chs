@@ -8,7 +8,6 @@ module GI.Internal.FunctionInfo
     )
 where
 
-import Control.Applicative ((<$>))
 import Foreign
 import Foreign.C
 

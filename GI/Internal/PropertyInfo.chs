@@ -7,7 +7,6 @@ module GI.Internal.PropertyInfo
 where
 
 import Control.Applicative ((<$>))
-import Data.Bits
 import Foreign
 import Foreign.C
 

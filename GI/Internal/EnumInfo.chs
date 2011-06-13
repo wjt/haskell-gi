@@ -5,7 +5,6 @@ module GI.Internal.EnumInfo
     ) where
 
 import Control.Applicative ((<$>))
-import Data.Word (Word64)
 import Foreign
 import Foreign.C
 

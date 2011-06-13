@@ -10,7 +10,6 @@ module GI.Internal.InterfaceInfo
 where
 
 import Control.Applicative ((<$>))
-import Control.Monad (forM)
 import Foreign
 import Foreign.C
 

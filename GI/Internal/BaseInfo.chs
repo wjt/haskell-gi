@@ -8,7 +8,6 @@ where
 
 import Foreign
 import Foreign.C
-import Foreign.C.String
 
 import Control.Applicative ((<$>))
 

@@ -10,12 +10,11 @@ import Foreign
 import Foreign.C
 
 import Control.Applicative ((<$>))
-import Control.Monad (when, forM)
+import Control.Monad (when)
 
 import System.Glib.GError
 import System.Glib.GList
 
-import GI.Internal.BaseInfo
 import GI.Internal.Types
 import GI.Util
 

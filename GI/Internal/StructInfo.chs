@@ -10,11 +10,9 @@ module GI.Internal.StructInfo
 where
 
 import Control.Applicative ((<$>))
-import Data.Bits
 import Foreign
 import Foreign.C
 
-import GI.Internal.ParamFlag
 import GI.Util (getList)
 
 {# import GI.Internal.Types #}

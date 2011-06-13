@@ -8,8 +8,6 @@ module GI.Internal.CallableInfo
     ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (forM)
-import Data.Word (Word64)
 import Foreign
 import Foreign.C
 
