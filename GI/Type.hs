@@ -128,7 +128,6 @@ haskellType TError = "GError" `con` []
 -- qualified, and its existence (in the typelib we're generating code
 -- for, or some other typelib) verified.
 haskellType (TInterface _ s) = s `con` []
-haskellType t = error $ "haskellType: " ++ show t
 
 foreignBasicType TBoolean = "CInt" `con` []
 foreignBasicType TUTF8    = "CString" `con` []
@@ -143,4 +142,3 @@ foreignType t@(TGSList _) = haskellType t
 foreignType t@(TGHash _ _) = haskellType t
 foreignType t@TError = haskellType t
 foreignType t@(TInterface _ _) = haskellType t
-foreignType t = error $ "foreignType: " ++ show t
