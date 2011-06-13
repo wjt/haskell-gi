@@ -52,7 +52,7 @@ getLoadedNamespaces :: IO [String]
 getLoadedNamespaces = do
     nsPtrs <- {# call unsafe get_loaded_namespaces #} nullRepository
     nss <- peekCStrings nsPtrs
-    mapCStrings free nsPtrs
+    _ <- mapCStrings free nsPtrs
     free nsPtrs
     return nss
 
