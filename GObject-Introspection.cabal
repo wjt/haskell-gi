@@ -18,6 +18,7 @@ Executable haskell-gi
   build-depends: base >= 4, containers, glib, mtl
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
+  ghc-options: -Wall -fno-warn-missing-signatures -fwarn-incomplete-patterns -fno-warn-name-shadowing
   other-modules:
       System.Glib.Initialize,
       GI.Internal.Types,
