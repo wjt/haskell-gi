@@ -2,6 +2,7 @@
 module GI.CodeGen
     ( genConstant
     , genFunction
+    , genCode
     , genModule
     ) where
 
@@ -256,6 +257,14 @@ genCallback (Callback (Named _ name _)) = do
   -- XXX
   line $ "type " ++ name ++ " =  () -> ()"
 
+genCode :: API -> CodeGen ()
+genCode (APIConst c) = genConstant c >> blank
+genCode (APIFunction f) = genFunction f >> blank
+genCode (APIEnum e) = genEnum e >> blank
+genCode (APIFlags f) = genFlags f >> blank
+genCode (APICallback c) = genCallback c >> blank
+genCode (APIStruct s) = genStruct s >> blank
+
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do
     line $ "-- Generated code."
@@ -271,15 +280,7 @@ genModule name apis = do
     line $ "import Foreign.C"
     blank
     cfg <- config
-    let (imports, rest) = splitImports $ runCodeGen' cfg $ forM_ apis $ \api ->
-            case api of
-                APIConst c -> genConstant c >> blank
-                APIFunction f -> genFunction f >> blank
-                APIEnum e -> genEnum e >> blank
-                APIFlags f -> genFlags f >> blank
-                APICallback c -> genCallback c >> blank
-                APIStruct s -> genStruct s >> blank
-                _ -> return ()
+    let (imports, rest) = splitImports $ runCodeGen' cfg $ forM_ apis genCode
     mapM_ (\c -> tell c >> blank) imports
     mapM_ tell rest
 
