@@ -162,14 +162,12 @@ toStruct si = toNamed si $ Struct (map toField $ structInfoFields si)
 -- XXX: Capture alignment and method info.
 
 data Union = Union {
-    unionName :: String,
     unionFields :: [Field] }
     deriving Show
 
 toUnion :: UnionInfo -> Named Union
 toUnion ui =
-    toNamed ui $ Union (baseInfoName . baseInfo $ ui)
-        (map toField $ unionInfoFields ui)
+    toNamed ui $ Union (map toField $ unionInfoFields ui)
 
 data Callback = Callback (Named Callable)
     deriving Show
