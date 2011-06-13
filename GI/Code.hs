@@ -23,7 +23,7 @@ data CodeTag
     = Import
     | TypeDecl
     | Decl
-    deriving Show
+    deriving (Eq, Show)
 
 data Code
     = NoCode
@@ -31,7 +31,7 @@ data Code
     | Indent Code
     | Concat Code Code
     | Tag CodeTag Code
-    deriving Show
+    deriving (Eq, Show)
 
 instance Monoid Code where
     mempty = NoCode
