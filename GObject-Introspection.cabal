@@ -13,7 +13,7 @@ Cabal-version:       >=1.2
 Extra-source-files:
 
 Executable haskell-gi
-  main-is: Main.hs
+  main-is: haskell-gi.hs
   pkgconfig-depends: gobject-introspection-1.0
   build-depends: base >= 4, containers, glib, mtl
   build-tools: hsc2hs
