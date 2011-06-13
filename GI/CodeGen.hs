@@ -264,6 +264,7 @@ genCode (APIEnum e) = genEnum e >> blank
 genCode (APIFlags f) = genFlags f >> blank
 genCode (APICallback c) = genCallback c >> blank
 genCode (APIStruct s) = genStruct s >> blank
+genCode a = error $ "can't generate code for " ++ show a
 
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do
@@ -285,5 +286,5 @@ genModule name apis = do
     mapM_ tell rest
 
     where splitImports = partition isImport . codeToList
-          isImport (Tag Import c) = True
+          isImport (Tag Import _code) = True
           isImport _ = False
