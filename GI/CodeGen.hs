@@ -38,6 +38,9 @@ valueStr (VFileName x) = show x
 
 padTo n s = s ++ replicate (n - length s) ' '
 
+split :: Char
+      -> String
+      -> [String]
 split c s = split' s "" []
     where split' [] w ws = reverse (reverse w : ws)
           split' (x:xs) w ws =
