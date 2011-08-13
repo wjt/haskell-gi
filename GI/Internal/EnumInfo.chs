@@ -30,4 +30,5 @@ enumInfoValues ei = unsafePerformIO $ map (ValueInfo <$> castPtr) <$>
 
 valueInfoValue :: ValueInfoClass val => val -> Word64
 valueInfoValue vi = unsafePerformIO $ fromIntegral <$>
+    -- FIXME: use g_enum_info_get_storage_type to get the types right
     {# call g_value_info_get_value #} (stupidValueCast vi)

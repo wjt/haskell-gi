@@ -237,12 +237,46 @@ genStruct n@(Named _ name (Struct _fields)) = do
   line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr " ++ name' ++ ")"
   -- XXX: Generate code for fields.
 
+camelize :: String -> String
+camelize "" = ""
+camelize s = case break (== '_') s of
+    (firstPart, rest) -> ucFirst firstPart ++ camelize (drop 1 rest)
+
+genEnumField :: Bool -> (String, a) -> CodeGen ()
+genEnumField addBar (name, _value) = do
+    let prefix = if addBar then "| " else "  "
+
+    line $ prefix ++ name
+
 genEnum :: Named Enumeration -> CodeGen ()
-genEnum n@(Named _ name (Enumeration _fields)) = do
+genEnum n@(Named _ name (Enumeration fields)) = do
   line $ "-- enum " ++ name
   name' <- upperName n
-  line $ "data " ++ name' ++ " = " ++ name'
-  -- XXX: Generate code for fields.
+  line $ "data " ++ name' ++ " ="
+
+  let mangledFields = map (\(n, v) -> (name' ++ camelize n, v)) fields
+  indent $ do
+      case mangledFields of
+          f:fs -> do
+              genEnumField False f
+              mapM_ (genEnumField True) fs
+          [] -> error $ "Empty enumeration " ++ show n
+
+  line $ "instance Enum " ++ name' ++ " where"
+  indent $ forM_ mangledFields $ \(fieldName, fieldValue) ->
+      line $ "fromEnum " ++ fieldName ++ " = " ++ show fieldValue
+  blank
+  indent $ do
+      forM_ mangledFields $ \(fieldName, fieldValue) ->
+          line $ "toEnum " ++ show fieldValue ++ " = " ++ fieldName
+      line $ "toEnum n = error $ \"bad value \" ++ show n ++ \" for enum " ++ name' ++ "\""
+
+  blank
+  -- FIXME: well what should we do if enums have two fields with the same value?
+  line $ "instance Eq " ++ name' ++ " where"
+  indent $ line "x == y = fromEnum x == fromEnum y"
+  line $ "instance Ord " ++ name' ++ " where"
+  indent $ line "compare x y = compare (fromEnum x) (fromEnum y)"
 
 genFlags :: Named Flags -> CodeGen ()
 genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
