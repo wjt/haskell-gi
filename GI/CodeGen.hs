@@ -257,6 +257,13 @@ genCallback (Callback (Named _ name _)) = do
   -- XXX
   line $ "type " ++ name ++ " =  () -> ()"
 
+genUnion :: Named Union -> CodeGen ()
+genUnion n@(Named _ name _) = do
+  line $ "-- union " ++ name
+  name' <- upperName n
+  line $ "data " ++ name' ++ " where"
+  -- XXX: Generate code for fields.
+
 genCode :: API -> CodeGen ()
 genCode (APIConst c) = genConstant c >> blank
 genCode (APIFunction f) = genFunction f >> blank
@@ -264,6 +271,7 @@ genCode (APIEnum e) = genEnum e >> blank
 genCode (APIFlags f) = genFlags f >> blank
 genCode (APICallback c) = genCallback c >> blank
 genCode (APIStruct s) = genStruct s >> blank
+genCode (APIUnion s) = genUnion s >> blank
 genCode a = error $ "can't generate code for " ++ show a
 
 genModule :: String -> [API] -> CodeGen ()

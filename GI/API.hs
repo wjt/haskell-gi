@@ -15,6 +15,7 @@ module GI.API
     , Object(..)
     , Enumeration(..)
     , Flags (..)
+    , Union (..)
     , loadAPI
     ) where
 
