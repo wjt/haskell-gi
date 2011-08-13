@@ -262,6 +262,8 @@ genEnum n@(Named _ name (Enumeration fields)) = do
               mapM_ (genEnumField True) fs
           [] -> error $ "Empty enumeration " ++ show n
 
+  blank
+
   line $ "instance Enum " ++ name' ++ " where"
   indent $ forM_ mangledFields $ \(fieldName, fieldValue) ->
       line $ "fromEnum " ++ fieldName ++ " = " ++ show fieldValue
@@ -272,9 +274,13 @@ genEnum n@(Named _ name (Enumeration fields)) = do
       line $ "toEnum n = error $ \"bad value \" ++ show n ++ \" for enum " ++ name' ++ "\""
 
   blank
+
   -- FIXME: well what should we do if enums have two fields with the same value?
   line $ "instance Eq " ++ name' ++ " where"
   indent $ line "x == y = fromEnum x == fromEnum y"
+
+  blank
+
   line $ "instance Ord " ++ name' ++ " where"
   indent $ line "compare x y = compare (fromEnum x) (fromEnum y)"
 

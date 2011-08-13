@@ -23,5 +23,43 @@ testConstant = testCase "constant" $ testCodeGen
   , Line "testFoo = 42"
   , Line ""]
 
-main = defaultMain [
-  testConstant]
+testEnum = testCase "enum" $ testCodeGen
+    (APIEnum (Named "test" "foo" (Enumeration fields))) $
+    [ Line "-- enum foo"
+    , Line "data TestFoo ="
+    , Indent (
+        Concat (Line "  TestFooBarBaz")
+               (Line "| TestFooSquidCatBattle")
+      )
+    , Line ""
+    , Line "instance Enum TestFoo where"
+    , Indent (
+        Concat (Line "fromEnum TestFooBarBaz = 51")
+               (Line "fromEnum TestFooSquidCatBattle = 75")
+      )
+    , Line ""
+    , Indent (
+        Concat (Line "toEnum 51 = TestFooBarBaz")
+               (Concat (Line "toEnum 75 = TestFooSquidCatBattle")
+                       (Line "toEnum n = error $ \"bad value \" ++ show n ++ \" for enum TestFoo\"")
+               )
+      )
+    , Line ""
+    , Line "instance Eq TestFoo where"
+    , Indent (Line "x == y = fromEnum x == fromEnum y")
+    , Line ""
+    , Line "instance Ord TestFoo where"
+    , Indent (Line "compare x y = compare (fromEnum x) (fromEnum y)")
+    , Line ""
+    ]
+  where
+    fields = [("BAR_BAZ", 51)
+             ,("SQUID_CAT_BATTLE", 75)
+             ]
+
+
+
+main = defaultMain
+    [ testConstant
+    , testEnum
+    ]
