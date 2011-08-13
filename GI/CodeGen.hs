@@ -248,9 +248,9 @@ genEnumField addBar (name, _value) = do
 
     line $ prefix ++ name
 
-genEnum :: Named Enumeration -> CodeGen ()
-genEnum n@(Named _ name (Enumeration fields)) = do
-  line $ "-- enum " ++ name
+genEnumEsque :: String -> Named Enumeration -> CodeGen ()
+genEnumEsque kind n@(Named _ name (Enumeration fields)) = do
+  line $ "-- " ++ kind ++ " " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " ="
 
@@ -284,12 +284,11 @@ genEnum n@(Named _ name (Enumeration fields)) = do
   line $ "instance Ord " ++ name' ++ " where"
   indent $ line "compare x y = compare (fromEnum x) (fromEnum y)"
 
+genEnum = genEnumEsque "enum"
+
 genFlags :: Named Flags -> CodeGen ()
-genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
-  line $ "-- flags " ++ name
-  name' <- upperName n
-  line $ "data " ++ name' ++ " = " ++ name'
-  -- XXX: Generate code for fields.
+genFlags (Named ns name (Flags e)) = do
+    genEnumEsque "flags" (Named ns name e)
 
 genCallback :: Callback -> CodeGen ()
 genCallback (Callback (Named _ name _)) = do
