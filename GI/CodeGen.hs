@@ -52,6 +52,9 @@ escapeReserved s = s
 ucFirst (x:xs) = toUpper x : map toLower xs
 ucFirst "" = error "ucFirst: empty string"
 
+ucFirst_ "" = "_"
+ucFirst_ xs = ucFirst xs
+
 getPrefix :: String -> CodeGen String
 getPrefix ns = do
     cfg <- config
@@ -60,7 +63,10 @@ getPrefix ns = do
         Nothing -> error $
             "no prefix defined for namespace " ++ show ns
 
-lowerName (Named ns s _) = do
+mangleName :: ([String] -> [String])
+           -> Named a
+           -> CodeGen String
+mangleName mangleParts (Named ns s _) = do
     cfg <- config
 
     case M.lookup s (names cfg) of
@@ -68,35 +74,23 @@ lowerName (Named ns s _) = do
         Nothing -> do
           let ss = split '_' s
           ss' <- addPrefix ss
-          return . concat . rename $ ss'
+          return . concat . mangleParts $ ss'
+  where
+    addPrefix ss = do
+        prefix <- getPrefix ns
+        return $ prefix : ss
 
-    where addPrefix ss = do
-              prefix <- getPrefix ns
-              return $ prefix : ss
+lowerName :: Named a
+          -> CodeGen String
+lowerName = mangleName rename
+  where
+    rename [w] = [map toLower w]
+    rename (w:ws) = map toLower w : map ucFirst_ ws
+    rename [] = error "rename: empty list"
 
-          rename [w] = [map toLower w]
-          rename (w:ws) = map toLower w : map ucFirst' ws
-          rename [] = error "rename: empty list"
-
-          ucFirst' "" = "_"
-          ucFirst' x = ucFirst x
-
-upperName (Named ns s _) = do
-    cfg <- config
-
-    case M.lookup s (names cfg) of
-        Just s' -> return s'
-        Nothing -> do
-            let ss = split '_' s
-            ss' <- addPrefix ss
-            return . concatMap ucFirst' $ ss'
-
-    where addPrefix ss = do
-              prefix <- getPrefix ns
-              return $ prefix : ss
-
-          ucFirst' "" = "_"
-          ucFirst' x = ucFirst x
+upperName :: Named a
+          -> CodeGen String
+upperName = mangleName (map ucFirst_)
 
 haskellType' :: Type -> CodeGen TypeRep
 haskellType' (TInterface ns n) = do
