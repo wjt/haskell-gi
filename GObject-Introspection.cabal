@@ -15,7 +15,7 @@ Extra-source-files:
 Executable haskell-gi
   main-is: haskell-gi.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, containers, glib, mtl
+  build-depends: base >= 4, containers, glib, mtl, haskell-src-exts
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   ghc-options: -Wall -fno-warn-missing-signatures -fwarn-incomplete-patterns -fno-warn-name-shadowing
@@ -47,7 +47,7 @@ Executable haskell-gi
 Executable test
   main-is: Test.hs
   pkgconfig-depends: gobject-introspection-1.0
-  build-depends: base >= 4, containers, glib, HUnit, mtl, test-framework, test-framework-hunit
+  build-depends: base >= 4, containers, glib, HUnit, mtl, test-framework, test-framework-hunit, haskell-src-exts
   build-tools: hsc2hs
   extensions: ForeignFunctionInterface
   ghc-options: -Wall -fno-warn-missing-signatures -fwarn-incomplete-patterns -fno-warn-name-shadowing

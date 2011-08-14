@@ -20,21 +20,40 @@ import GI.Type
 import GI.Value
 import GI.Internal.ArgInfo
 
-valueStr VVoid         = "()"
-valueStr (VBoolean x)  = show x
-valueStr (VInt8 x)     = show x
-valueStr (VUInt8 x)    = show x
-valueStr (VInt16 x)    = show x
-valueStr (VUInt16 x)   = show x
-valueStr (VInt32 x)    = show x
-valueStr (VUInt32 x)   = show x
-valueStr (VInt64 x)    = show x
-valueStr (VUInt64 x)   = show x
-valueStr (VFloat x)    = show x
-valueStr (VDouble x)   = show x
-valueStr (VGType x)    = show x
-valueStr (VUTF8 x)     = show x
-valueStr (VFileName x) = show x
+import qualified Language.Haskell.Exts as HS
+
+nowhere = (HS.SrcLoc "" 0 0)
+
+litInt :: Integral i
+       => i
+       -> HS.Exp
+litInt = HS.Lit . HS.Int . fromIntegral
+
+litFrac :: Real r
+        => r
+        -> HS.Exp
+litFrac = HS.Lit . HS.Frac . toRational
+
+litString :: String
+          -> HS.Exp
+litString = HS.Lit . HS.String
+
+valueExp :: Value -> HS.Exp
+valueExp VVoid = HS.Con $ HS.Special HS.UnitCon
+valueExp (VBoolean x) = HS.Con $ HS.UnQual $ HS.Ident $ show x
+valueExp (VInt8 x)     = litInt x
+valueExp (VUInt8 x)    = litInt x
+valueExp (VInt16 x)    = litInt x
+valueExp (VUInt16 x)   = litInt x
+valueExp (VInt32 x)    = litInt x
+valueExp (VUInt32 x)   = litInt x
+valueExp (VInt64 x)    = litInt x
+valueExp (VUInt64 x)   = litInt x
+valueExp (VFloat x)    = litFrac x
+valueExp (VDouble x)   = litFrac x
+valueExp (VGType x)    = litInt x
+valueExp (VUTF8 x)     = litString x
+valueExp (VFileName x) = litString x
 
 padTo n s = s ++ replicate (n - length s) ' '
 
@@ -113,13 +132,33 @@ mkLet name value = line $ "let " ++ name ++ " = " ++ value
 
 mkBind name value = line $ name ++ " <- " ++ value
 
+-- When constructing a source tree from scratch (rather than loading it with
+-- parseWithComments), it's not currently possible to pretty-print with
+-- comments. Language.Haskell.Exts.Annotated.ExactPrint can do it, but we can't
+-- generate an exact tree for it to print.
+--
+-- This hack, suggested by Neil Mitchell, attaches an ANN pragma to a symbol
+-- which just contains an arbitrary string. If necessary, we can later
+-- post-process this into a comment.
+annotateName :: HS.Name
+             -> String
+             -> CodeGen ()
+annotateName name comment = do
+    let annotation = HS.Lit (HS.String comment)
+    decl $ HS.AnnPragma nowhere (HS.Ann name annotation)
+
 genConstant :: Named Constant -> CodeGen ()
-genConstant n@(Named _ name (Constant value)) = do
+genConstant n@(Named _ _ (Constant value)) = do
     name' <- lowerName n
+    let name'' = HS.Ident name'
     ht <- haskellType' $ valueType value
-    line $ "-- constant " ++ name
-    line $ name' ++ " :: " ++ show ht
-    line $ name' ++ " = " ++ valueStr value
+    annotateName name'' ("constant ++ name")
+    let sig = HS.TyCon (HS.UnQual (HS.Ident (show ht)))
+    decl $ HS.TypeSig nowhere [name''] sig
+    decl $ HS.FunBind [HS.Match nowhere name'' [] Nothing
+                       (HS.UnGuardedRhs (valueExp value))
+                       (HS.BDecls [])
+                      ]
 
 foreignImport :: String -> Callable -> CodeGen ()
 foreignImport symbol callable = tag Import $ do
@@ -239,47 +278,108 @@ camelize "" = ""
 camelize s = case break (== '_') s of
     (firstPart, rest) -> ucFirst firstPart ++ camelize (drop 1 rest)
 
-genEnumField :: Bool -> (String, a) -> CodeGen ()
-genEnumField addBar (name, _value) = do
-    let prefix = if addBar then "| " else "  "
+-- | Defines one clause of a function binding, which may match many arguments
+match :: String   -- ^ function name
+      -> [HS.Pat] -- ^ argument pattern matches
+      -> HS.Exp   -- ^ the right hand side of the definition
+      -> HS.Match -- ^ the resulting function binding clause
+match fun patterns exp = HS.Match loc name patterns type_ rhs binds
+  where
+    loc = nowhere
+    name = HS.Ident fun
+    type_ = Nothing
+    rhs = HS.UnGuardedRhs exp
+    binds = HS.BDecls []
 
-    line $ prefix ++ name
+-- | Defines a wildcard pattern match which raises an error; for instance,
+--   'wildcardError "Blah" foo' yields something like
+--
+--   foo x = error $ "Blah foo: unhandled value " ++ show x
+wildcardError :: String    -- ^ context for the error message (eg. type name)
+              -> String    -- ^ function name
+              -> HS.Match  -- ^ the resulting function binding clause
+wildcardError context fun =
+    match fun [HS.PVar x] exp
+  where
+    x = HS.Ident "x"
+    varExp = HS.Var . HS.UnQual
+    error_ = varExp (HS.Ident "error")
+    message = HS.Lit (HS.String (context ++ " " ++ fun ++ ": unhandled value "))
+    showVar = HS.App (varExp (HS.Ident "show"))
+                     (varExp x)
+    fullMessage = HS.InfixApp message
+                              (HS.QVarOp (HS.UnQual (HS.Symbol "++")))
+                              showVar
+    exp = HS.App error_ fullMessage
+
+-- | Generates a simple instance declaration for a type of kind *.
+instance_ :: String        -- ^ class name
+          -> HS.Name       -- ^ type name
+          -> [HS.InstDecl] -- ^ body of instance declaration
+          -> HS.Decl       -- ^ resulting instance declaration
+instance_ class_ name body = HS.InstDecl loc context className typeNames body
+  where
+    loc = nowhere
+    context = []
+    className = HS.UnQual (HS.Ident class_)
+    typeNames = [HS.TyCon (HS.UnQual name)]
+
 
 genEnumEsque :: String -> Named Enumeration -> CodeGen ()
 genEnumEsque kind n@(Named _ name (Enumeration fields)) = do
-  line $ "-- " ++ kind ++ " " ++ name
   name' <- upperName n
-  line $ "data " ++ name' ++ " ="
+  let name'' = HS.Ident name'
 
+  -- data name''
   let mangledFields = map (\(n, v) -> (name' ++ camelize n, v)) fields
-  indent $ do
-      case mangledFields of
-          f:fs -> do
-              genEnumField False f
-              mapM_ (genEnumField True) fs
-          [] -> error $ "Empty enumeration " ++ show n
+  let constructors =
+          [ HS.QualConDecl nowhere [] [] (HS.ConDecl (HS.Ident n) [])
+          | (n, _) <- mangledFields
+          ]
+  annotateName name'' (kind ++ " " ++ name)
+  decl $ HS.DataDecl nowhere HS.DataType [] name'' [] constructors []
 
-  blank
+  -- instance Enum name''
+  let fromEnumDecl = HS.InsDecl $ HS.FunBind
+          [ match "fromEnum"
+                   [HS.PApp (HS.UnQual (HS.Ident n)) []]
+                   (litInt v)
+          | (n, v) <- mangledFields
+          ]
+      toEnumDecl = HS.InsDecl . HS.FunBind $
+          [ match "toEnum"
+                  [HS.PLit . HS.Int . fromIntegral $ v]
+                  (HS.Var (HS.UnQual (HS.Ident n)))
+          | (n, v) <- mangledFields
+          ] ++
+          [ wildcardError name' "toEnum" ]
 
-  line $ "instance Enum " ++ name' ++ " where"
-  indent $ forM_ mangledFields $ \(fieldName, fieldValue) ->
-      line $ "fromEnum " ++ fieldName ++ " = " ++ show fieldValue
-  blank
-  indent $ do
-      forM_ mangledFields $ \(fieldName, fieldValue) ->
-          line $ "toEnum " ++ show fieldValue ++ " = " ++ fieldName
-      line $ "toEnum n = error $ \"bad value \" ++ show n ++ \" for enum " ++ name' ++ "\""
+  decl $ instance_ "Enum" name'' [ fromEnumDecl, toEnumDecl ]
 
-  blank
-
+  -- instance Eq name''
   -- FIXME: well what should we do if enums have two fields with the same value?
-  line $ "instance Eq " ++ name' ++ " where"
-  indent $ line "x == y = fromEnum x == fromEnum y"
+  let eqOp = HS.UnQual (HS.Symbol "==")
+      eqPat = HS.PInfixApp (HS.PVar (HS.Ident "x"))
+                           eqOp
+                           (HS.PVar (HS.Ident "y"))
+      fromEnum_ x = HS.App (HS.Var (HS.UnQual (HS.Ident "fromEnum")))
+                           (HS.Var (HS.UnQual (HS.Ident x)))
+      eqBody = HS.InfixApp (fromEnum_ "x") (HS.QVarOp eqOp) (fromEnum_ "y")
 
-  blank
+  decl $ instance_ "Eq" name''
+                   [ HS.InsDecl (HS.PatBind nowhere eqPat Nothing
+                                            (HS.UnGuardedRhs eqBody)
+                                            (HS.BDecls [])
+                                )
+                   ]
 
-  line $ "instance Ord " ++ name' ++ " where"
-  indent $ line "compare x y = compare (fromEnum x) (fromEnum y)"
+  -- instance Ord name''
+  let compareBody =
+          match "compare" []
+                (HS.App (HS.Var (HS.UnQual (HS.Ident "comparing")))
+                        (HS.Var (HS.UnQual (HS.Ident "fromEnum")))
+                )
+  decl $ instance_ "Ord" name'' [HS.InsDecl (HS.FunBind [compareBody])]
 
 genEnum = genEnumEsque "enum"
 
@@ -312,17 +412,26 @@ genCode a = error $ "can't generate code for " ++ show a
 
 genModule :: String -> [API] -> CodeGen ()
 genModule name apis = do
-    line $ "-- Generated code."
-    blank
-    line $ "{-# LANGUAGE ForeignFunctionInterface #-}"
-    blank
-    -- XXX: Generate export list.
-    line $ "module " ++ name ++ " where"
-    blank
-    line $ "import Data.Int"
-    line $ "import Data.Word"
-    line $ "import Foreign"
-    line $ "import Foreign.C"
+    let importedModules = [ "Data.Int"
+                          , "Data.Word"
+                          , "Data.Ord"
+                          , "Foreign"
+                          , "Foreign.C"
+                          ]
+        imports = map (\n -> HS.ImportDecl nowhere (HS.ModuleName n) False False
+                                           Nothing Nothing Nothing)
+                      importedModules
+
+    let m = HS.Module nowhere
+                      (HS.ModuleName name)
+                      [HS.LanguagePragma nowhere
+                                         [HS.Ident "ForeignFunctionInterface"]]
+                      Nothing
+                      Nothing
+                      imports
+                      []
+
+    line $ HS.prettyPrint m
     blank
     cfg <- config
     let (imports, rest) = splitImports $ runCodeGen' cfg $ forM_ apis genCode

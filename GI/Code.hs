@@ -12,12 +12,15 @@ module GI.Code
     , line
     , blank
     , tag
+    , decl
     , config
     ) where
 
 import Control.Monad.Reader
 import Control.Monad.Writer
 import qualified Data.Map as M
+
+import qualified Language.Haskell.Exts as HS
 
 data CodeTag
     = Import
@@ -31,6 +34,7 @@ data Code
     | Indent Code
     | Concat Code Code
     | Tag CodeTag Code
+    | HSDecl HS.Decl
     deriving (Eq, Show)
 
 instance Monoid Code where
@@ -68,6 +72,9 @@ tag t cg = do
 line :: String -> CodeGen ()
 line = tell . Line
 
+decl :: HS.Decl -> CodeGen ()
+decl = tell . HSDecl
+
 blank = line ""
 
 config :: CodeGen Config
@@ -85,6 +92,7 @@ codeToString c = concatMap (++ "\n") $ str 0 c []
           str n (Indent c) cont = str (n + 1) c cont
           str n (Tag _ c) cont = str n c cont
           str n (Concat c1 c2) cont = str n c1 (str n c2 cont)
+          str n (HSDecl d) cont = HS.prettyPrint d :cont
 
 codeToList c = list c []
     where list NoCode cont = cont
