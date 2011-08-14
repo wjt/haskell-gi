@@ -395,9 +395,11 @@ genCallback (Callback (Named _ name _)) = do
 
 genUnion :: Named Union -> CodeGen ()
 genUnion n@(Named _ name _) = do
-  line $ "-- union " ++ name
   name' <- upperName n
-  line $ "data " ++ name' ++ " where"
+  let name'' = HS.Ident name'
+
+  annotateName name'' ("union " ++ name)
+  decl $ HS.DataDecl nowhere HS.DataType [] name'' [] [] []
   -- XXX: Generate code for fields.
 
 genCode :: API -> CodeGen ()
