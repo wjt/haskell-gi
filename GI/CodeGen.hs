@@ -389,9 +389,11 @@ genFlags (Named ns name (Flags e)) = do
 
 genCallback :: Callback -> CodeGen ()
 genCallback (Callback (Named _ name _)) = do
-  line $ "-- callback " ++ name
+  let name'' = HS.Ident name
+  annotateName name'' ("callback " ++ name)
   -- XXX
-  line $ "type " ++ name ++ " =  () -> ()"
+  let coin = HS.TyCon (HS.Special HS.UnitCon)
+  decl $ HS.TypeDecl nowhere name'' [] (HS.TyFun coin coin)
 
 genUnion :: Named Union -> CodeGen ()
 genUnion n@(Named _ name _) = do
