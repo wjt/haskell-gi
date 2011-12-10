@@ -278,7 +278,7 @@ genCallback n _ = do
   name' <- upperName n
   line $ "-- callback " ++ name' ++ " "
   -- XXX
-  line $ "type " ++ name' ++ " = () -> ()"
+  line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr (IO ()))"
 
 genCode :: Name -> API -> CodeGen ()
 genCode n (APIConst c) = genConstant n c >> blank
