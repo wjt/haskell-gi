@@ -99,23 +99,23 @@ io t = "IO" `con` [t]
 ptr :: TypeRep -> TypeRep
 ptr t = "Ptr" `con` [t]
 
-haskellBasicType TVoid    = typeOf ()
-haskellBasicType TBoolean = typeOf True
-haskellBasicType TInt8    = typeOf (0 :: Int8)
-haskellBasicType TUInt8   = typeOf (0 :: Word8)
-haskellBasicType TInt16   = typeOf (0 :: Int16)
-haskellBasicType TUInt16  = typeOf (0 :: Word16)
-haskellBasicType TInt32   = typeOf (0 :: Int32)
-haskellBasicType TUInt32  = typeOf (0 :: Word32)
-haskellBasicType TInt64   = typeOf (0 :: Int64)
-haskellBasicType TUInt64  = typeOf (0 :: Word64)
+haskellBasicType TVoid     = typeOf ()
+haskellBasicType TBoolean  = typeOf True
+haskellBasicType TInt8     = typeOf (0 :: Int8)
+haskellBasicType TUInt8    = typeOf (0 :: Word8)
+haskellBasicType TInt16    = typeOf (0 :: Int16)
+haskellBasicType TUInt16   = typeOf (0 :: Word16)
+haskellBasicType TInt32    = typeOf (0 :: Int32)
+haskellBasicType TUInt32   = typeOf (0 :: Word32)
+haskellBasicType TInt64    = typeOf (0 :: Int64)
+haskellBasicType TUInt64   = typeOf (0 :: Word64)
 -- XXX: Is this correct?
-haskellBasicType TGType   = typeOf (0 :: Word)
-haskellBasicType TUTF8    = typeOf ""
-haskellBasicType TFloat   = typeOf (0 :: Float)
-haskellBasicType TDouble  = typeOf (0 :: Double)
-haskellBasicType TUniChar = typeOf ('\0' :: Char)
-haskellBasicType t        = error $ "haskellBasicType: " ++ show t
+haskellBasicType TGType    = typeOf (0 :: Word)
+haskellBasicType TUTF8     = typeOf ""
+haskellBasicType TFloat    = typeOf (0 :: Float)
+haskellBasicType TDouble   = typeOf (0 :: Double)
+haskellBasicType TUniChar  = typeOf ('\0' :: Char)
+haskellBasicType TFileName = typeOf ""
 
 haskellType :: Type -> TypeRep
 haskellType (TBasicType bt) = haskellBasicType bt
