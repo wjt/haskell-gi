@@ -271,10 +271,11 @@ genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
   -- XXX: Generate code for fields.
 
 genCallback :: Callback -> CodeGen ()
-genCallback (Callback (Named _ name _)) = do
-  line $ "-- callback " ++ name
+genCallback (Callback n@(Named _ _ _)) = do
+  name' <- upperName n
+  line $ "-- callback " ++ name' ++ " "
   -- XXX
-  line $ "type " ++ name ++ " =  () -> ()"
+  line $ "type " ++ name' ++ " = () -> ()"
 
 genCode :: API -> CodeGen ()
 genCode (APIConst c) = genConstant c >> blank
