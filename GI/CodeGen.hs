@@ -49,7 +49,7 @@ escapeReserved "in" = "in_"
 escapeReserved "data" = "data_"
 escapeReserved s = s
 
-ucFirst (x:xs) = toUpper x : map toLower xs
+ucFirst (x:xs) = toUpper x : xs
 ucFirst "" = error "ucFirst: empty string"
 
 getPrefix :: String -> CodeGen String
