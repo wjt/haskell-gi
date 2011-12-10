@@ -10,7 +10,7 @@ import qualified Data.Map as M
 import System.Glib.Initialize
 import System.Glib.GError
 
-import GI.API (loadAPI)
+import GI.API (Name(..), loadAPI)
 import GI.Code (Config(..), codeToString, runCodeGen')
 import GI.CodeGen (genModule)
 
@@ -60,7 +60,8 @@ processAPI options name = do
     apis <- loadAPI name
     let cfg = Config {
           prefixes = M.fromList (optPrefixes options),
-          names = M.fromList (optRenames options) }
+          names = M.fromList (optRenames options),
+          input = M.fromList [(s, a) | (Name _ns s, a) <- apis] }
 
     case optMode options of
         GenerateCode ->

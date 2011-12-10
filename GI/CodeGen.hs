@@ -11,7 +11,7 @@ import Control.Monad (forM, forM_)
 import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate, partition)
-import Data.Typeable (TypeRep)
+import Data.Typeable (TypeRep, tyConString, typeRepTyCon)
 import qualified Data.Map as M
 
 import GI.API
@@ -114,7 +114,19 @@ haskellType' :: Type -> CodeGen TypeRep
 haskellType' t = haskellType <$> mapPrefixes t
 
 foreignType' :: Type -> CodeGen TypeRep
-foreignType' t = foreignType <$> mapPrefixes t
+foreignType' t = do
+  isEnum <- getIsEnum
+  if isEnum
+     -- Enum values are represented by machine words.
+    then return $ "Word" `con` []
+    else foreignType <$> mapPrefixes t
+
+  where getIsEnum = do
+          a <- findInput (show $ haskellType t)
+          case a of
+            Nothing -> return False
+            (Just (APIEnum _)) -> return True
+            _ -> return False
 
 prime = (++ "'")
 
@@ -150,10 +162,27 @@ hToF arg = do
     hType <- haskellType' $ argType arg
     fType <- foreignType' $ argType arg
     if hType == fType
-        then mkLet' "id"
-        else hToF' (show hType) (show fType)
+      then mkLet' "id"
+      else do
+        ok <- convertGeneratedType
+        if ok
+          then return ()
+          else if ptr hType == fType
+               then
+                 let con = tyConString $ typeRepTyCon hType
+                 in mkLet' $ "(\\(" ++ con ++ " x) -> x)"
+               else
+                 hToF' (show hType) (show fType)
 
     where
+    convertGeneratedType = do
+       a <- findInput (show $ haskellType $ argType arg)
+       case a of
+         Nothing -> return False
+         Just (APIEnum _) -> do
+           mkLet' "(fromIntegral . fromEnum)"
+           return True
+         _ -> return False
     name = escapeReserved $ argName arg
     mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
     mkBind' conv = mkBind (prime name) (conv ++ " " ++ name)
@@ -163,6 +192,40 @@ hToF arg = do
     hToF' "[Char]" "Ptr CString" = mkBind' "bullshit"
     hToF' hType fType = error $
         "don't know how to convert " ++ hType ++ " to " ++ fType
+
+fToH :: Type -> CodeGen ()
+fToH t = do
+    hType <- haskellType' t
+    fType <- foreignType' t
+    if hType == fType
+      then mkLet' "id"
+      else do
+        ok <- convertGeneratedType
+        if ok
+          then return ()
+          else if ptr hType == fType
+               then mkLet' $ tyConString $ typeRepTyCon hType
+               else fToH' (show fType) (show hType)
+
+    where
+    convertGeneratedType = do
+       a <- findInput (show $ haskellType t)
+       case a of
+         Nothing -> return False
+         Just (APIEnum _) -> do
+           mkLet' "(toEnum . fromIntegral)"
+           return True
+         _ -> return False
+    -- XXX: hardcoded names
+    a1 = "result'"
+    a2 = "result"
+    mkLet' conv = mkLet a1 (conv ++ " " ++ a2)
+    mkBind' conv = mkBind a1 (conv ++ " " ++ a2)
+    fToH' "CString" "[Char]" = mkBind' "peekCString"
+    fToH' "GType" "Word" = mkLet' "fromIntegral"
+    fToH' "CInt" "Bool" = mkLet' "(/= 0)"
+    fToH' fType hType = error $
+       "don't know how to convert " ++ fType ++ " to " ++ hType
 
 genCallable :: Name -> String -> Callable -> CodeGen ()
 genCallable n symbol callable = do
@@ -201,8 +264,9 @@ genCallable n symbol callable = do
     -- XXX: Should create ForeignPtrs for pointer results.
     -- XXX: Check argument transfer.
     convertOut = do
-        -- XXX: Do reverse conversion here.
-        mkLet "result'" "result"
+        -- Convert return value.
+        fToH (returnType callable)
+        -- XXX: Do proper conversion of out parameters.
         forM_ outArgs $ \arg ->
             if direction arg == DirectionIn
                 then return ()

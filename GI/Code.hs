@@ -12,6 +12,7 @@ module GI.Code
     , line
     , blank
     , tag
+    , findInput
     , config
     ) where
 
@@ -21,6 +22,8 @@ import Data.Sequence (Seq, ViewL ((:<)), (><), (|>), (<|))
 import qualified Data.Foldable as F
 import qualified Data.Map as M
 import qualified Data.Sequence as S
+
+import GI.API (API)
 
 data CodeTag
     = Import
@@ -49,7 +52,9 @@ instance Monoid Code where
 
 data Config = Config {
   prefixes :: M.Map String String,
-  names :: M.Map String String }
+  names :: M.Map String String,
+  -- XXX: Blegh.
+  input :: M.Map String API }
 
 type CodeGen = WriterT Code (Reader Config)
 
@@ -69,6 +74,11 @@ tag t cg = do
     (x, code) <- recurse cg
     tell $ Tag t code
     return x
+
+findInput :: String -> CodeGen (Maybe API)
+findInput name = do
+    cfg <- config
+    return $ M.lookup name (input cfg)
 
 line :: String -> CodeGen ()
 line = tell . Line

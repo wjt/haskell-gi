@@ -15,7 +15,8 @@ import GI.Value
 
 testConfig = Config {
   prefixes = M.fromList [("test", "test")],
-  names = M.empty }
+  names = M.empty,
+  input = M.empty }
 
 testCodeGen name api code = (codeToList $ runCodeGen' testConfig $ genCode name api) @?= code
 
