@@ -4,10 +4,13 @@ import Test.Framework.Providers.HUnit
 import Test.HUnit
 
 import qualified Data.Map as M
+import qualified Data.Sequence as S
 
 import GI.API
 import GI.Code
 import GI.CodeGen
+import GI.Internal.ArgInfo
+import GI.Type
 import GI.Value
 
 testConfig = Config {
@@ -23,5 +26,47 @@ testConstant = testCase "constant" $ testCodeGen
   , Line "testFoo = 42"
   , Line ""]
 
+testFunction = testCase "function" $ testCodeGen
+  (APIFunction $ Function {
+      fnSymbol = "foo_bar",
+      fnCallable = Named "test" "foo_bar" (
+        Callable {
+           returnType = TBasicType TVoid,
+           returnMayBeNull = False,
+           returnTransfer = TransferNothing,
+           returnAttributes = [],
+           args = [
+             Arg {
+                argName = "x",
+                argType = TBasicType TInt8,
+                direction = DirectionIn,
+                transfer = TransferNothing,
+                scope = ScopeTypeInvalid }]})})
+  [ Line "-- function foo_bar"
+  , Tag Import $ Sequence $ S.fromList
+      [ Line "foreign import ccall \"foo_bar\" foo_bar :: "
+      , Indent $ Sequence $ S.fromList
+        [ Line "Int8 ->                                 -- x"
+        , Line "IO ()"
+        ]
+      ]
+  , Tag TypeDecl $ Sequence $ S.fromList
+      [ Line "testFooBar ::"
+      , Indent $ Sequence $ S.fromList
+        [ Line "Int8 ->                                 -- x"
+        , Line "IO ()"
+        ]
+      ]
+  , Tag Decl $ Line "testFooBar x = do"
+  , Indent $ Sequence $ S.fromList
+    [ Line "let x' = id x"
+    , Line "result <- foo_bar x'"
+    , Line "let result' = result"
+    , Line "return ()"
+    ]
+  , Line ""
+  ]
+
 main = defaultMain [
-  testConstant]
+  testConstant,
+  testFunction]

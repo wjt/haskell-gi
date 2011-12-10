@@ -17,7 +17,10 @@ module GI.Code
 
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Data.Sequence (Seq, ViewL ((:<)), (><), (|>), (<|))
+import qualified Data.Foldable as F
 import qualified Data.Map as M
+import qualified Data.Sequence as S
 
 data CodeTag
     = Import
@@ -29,7 +32,7 @@ data Code
     = NoCode
     | Line String
     | Indent Code
-    | Concat Code Code
+    | Sequence (Seq Code)
     | Tag CodeTag Code
     deriving (Eq, Show)
 
@@ -39,8 +42,10 @@ instance Monoid Code where
     NoCode `mappend` NoCode = NoCode
     x `mappend` NoCode = x
     NoCode `mappend` x = x
-    (Concat a b) `mappend` c = Concat a (Concat b c)
-    a `mappend` b = Concat a b
+    (Sequence a) `mappend` (Sequence b) = Sequence (a >< b)
+    (Sequence a) `mappend` b = Sequence (a |> b)
+    a `mappend` (Sequence b) = Sequence (a <| b)
+    a `mappend` b = Sequence (a <| b <| S.empty)
 
 data Config = Config {
   prefixes :: M.Map String String,
@@ -84,10 +89,14 @@ codeToString c = concatMap (++ "\n") $ str 0 c []
           str n (Line s) cont = (replicate (n * 4) ' ' ++ s) : cont
           str n (Indent c) cont = str (n + 1) c cont
           str n (Tag _ c) cont = str n c cont
-          str n (Concat c1 c2) cont = str n c1 (str n c2 cont)
+          str n (Sequence s) cont = deseq n (S.viewl s) cont
+          -- str n (Sequence s) cont = F.foldr (\code rest -> str n code : rest) cont s
+
+          deseq _ S.EmptyL cont = cont
+          deseq n (c :< cs) cont = str n c (deseq n (S.viewl cs) cont)
 
 codeToList c = list c []
     where list NoCode cont = cont
-          list (Concat c1 c2) cont = list c1 (list c2 cont)
+          list (Sequence s) cont = F.foldr (:) cont s
           list c cont = c : cont
 
