@@ -159,7 +159,7 @@ hToF arg = do
     mkBind' conv = mkBind (prime name) (conv ++ " " ++ name)
     hToF' "[Char]" "CString" = mkBind' "newCString"
     hToF' "Word"   "GType"   = mkLet' "fromIntegral"
-    hToF' "Bool"   "CInt"    = mkLet' "fromEnum"
+    hToF' "Bool"   "CInt"    = mkLet' "(fromIntegral . fromEnum)"
     hToF' "[Char]" "Ptr CString" = mkBind' "bullshit"
     hToF' hType fType = error $
         "don't know how to convert " ++ hType ++ " to " ++ fType
