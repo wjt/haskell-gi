@@ -67,6 +67,29 @@ testFunction = testCase "function" $ testCodeGen
   , Line ""
   ]
 
+testEnum = testCase "enum" $ testCodeGen code expected
+  where
+    enum = Enumeration [("foo", 1), ("bar", 2)]
+    code = APIEnum $ Named "test" "enum" enum
+    expected =
+      [ Line "-- enum enum"
+      , Line "data TestEnum = "
+      , Indent $ Sequence $ S.fromList
+        [Line "  TestTestEnumFoo",
+         Line "| TestTestEnumBar"
+        ]
+      , Line ""
+      , Line "instance Enum TestEnum where"
+      , Indent $ Sequence $ S.fromList
+        [Line "fromEnum TestEnumFoo = 1",
+         Line "fromEnum TestEnumBar = 2"]
+      , Line ""
+      , Indent $ Sequence $ S.fromList
+        [Line "toEnum 1 = TestEnumFoo"
+        , Line "toEnum 2 = TestEnumBar"]
+      , Line ""]
+
 main = defaultMain [
   testConstant,
-  testFunction]
+  testFunction,
+  testEnum]

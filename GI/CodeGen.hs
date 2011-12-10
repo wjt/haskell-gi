@@ -7,7 +7,7 @@ module GI.CodeGen
     ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (forM_)
+import Control.Monad (forM, forM_)
 import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate, partition)
@@ -238,11 +238,30 @@ genStruct n@(Named _ name (Struct _fields)) = do
   -- XXX: Generate code for fields.
 
 genEnum :: Named Enumeration -> CodeGen ()
-genEnum n@(Named _ name (Enumeration _fields)) = do
+genEnum n@(Named ns name (Enumeration fields)) = do
   line $ "-- enum " ++ name
   name' <- upperName n
-  line $ "data " ++ name' ++ " = " ++ name'
-  -- XXX: Generate code for fields.
+  line $ "data " ++ name' ++ " = "
+  fields' <- forM fields $ \(fieldName, value) -> do
+    n <- upperName (Named ns (name ++ "_" ++ fieldName) ())
+    return (n, value)
+  indent $ do
+    case fields' of
+      ((fieldName, _value):fs) -> do
+        n' <- upperName (Named ns fieldName Nothing)
+        line $ "  " ++ n'
+        forM_ fs $ \(n, _v) -> do
+          n' <- upperName (Named ns n Nothing)
+          line $ "| " ++ n'
+      _ -> return()
+  blank
+  line $ "instance Enum " ++ name' ++ " where"
+  indent $ forM_ fields' $ \(n, v) ->
+    line $ "fromEnum " ++ n ++ " = " ++ show v
+  blank
+  -- XXX: Handle ambiguous toEnum conversions correctly.
+  indent $ forM_ fields' $ \(n, v) ->
+    line $ "toEnum " ++ show v ++ " = " ++ n
 
 genFlags :: Named Flags -> CodeGen ()
 genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
