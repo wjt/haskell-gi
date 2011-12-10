@@ -26,8 +26,6 @@ module GI.Internal.Types
   , ArgInfoClass(..)
   , ConstantInfo(..)
   , ConstantInfoClass(..)
-  , ErrorDomainInfo(..)
-  , ErrorDomainInfoClass(..)
   , FieldInfo(..)
   , FieldInfoClass(..)
   , PropertyInfo(..)
@@ -146,12 +144,6 @@ instance BaseInfoClass ArgInfo where
 instance BaseInfoClass ConstantInfo where
   baseInfo (ConstantInfo p) = BaseInfo (castPtr p)
   fromBaseInfo (BaseInfo p) = ConstantInfo (castPtr p)
-
-{# pointer *GIErrorDomainInfo as ErrorDomainInfo newtype #}
-{# class ErrorDomainInfoClass ErrorDomainInfo #}
-instance BaseInfoClass ErrorDomainInfo where
-  baseInfo (ErrorDomainInfo p) = BaseInfo (castPtr p)
-  fromBaseInfo (BaseInfo p) = ErrorDomainInfo (castPtr p)
 
 {# pointer *GIFieldInfo as FieldInfo newtype #}
 {# class FieldInfoClass FieldInfo #}
