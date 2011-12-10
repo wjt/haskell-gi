@@ -17,19 +17,19 @@ testConfig = Config {
   prefixes = M.fromList [("test", "test")],
   names = M.empty }
 
-testCodeGen api code = (codeToList $ runCodeGen' testConfig $ genCode api) @?= code
+testCodeGen name api code = (codeToList $ runCodeGen' testConfig $ genCode name api) @?= code
 
-testConstant = testCase "constant" $ testCodeGen
-  (APIConst (Named "test" "foo" (Constant (VInt8 42))))
+testConstant = testCase "constant" $
+  testCodeGen (Name "test" "foo") (APIConst (Constant (VInt8 42)))
   [ Line "-- constant foo"
   , Line "testFoo :: Int8"
   , Line "testFoo = 42"
   , Line ""]
 
-testFunction = testCase "function" $ testCodeGen
-  (APIFunction $ Function {
+testFunction = testCase "function" $
+  testCodeGen (Name "test" "foo_bar") (APIFunction $ Function {
       fnSymbol = "foo_bar",
-      fnCallable = Named "test" "foo_bar" (
+      fnCallable =
         Callable {
            returnType = TBasicType TVoid,
            returnMayBeNull = False,
@@ -41,7 +41,7 @@ testFunction = testCase "function" $ testCodeGen
                 argType = TBasicType TInt8,
                 direction = DirectionIn,
                 transfer = TransferNothing,
-                scope = ScopeTypeInvalid }]})})
+                scope = ScopeTypeInvalid }]}})
   [ Line "-- function foo_bar"
   , Tag Import $ Sequence $ S.fromList
       [ Line "foreign import ccall \"foo_bar\" foo_bar :: "
@@ -67,16 +67,16 @@ testFunction = testCase "function" $ testCodeGen
   , Line ""
   ]
 
-testEnum = testCase "enum" $ testCodeGen code expected
+testEnum = testCase "enum" $ testCodeGen name api expected
   where
-    enum = Enumeration [("foo", 1), ("bar", 2)]
-    code = APIEnum $ Named "test" "enum" enum
+    name = Name "test" "enum"
+    api = APIEnum $ Enumeration [("foo", 1), ("bar", 2)]
     expected =
       [ Line "-- enum enum"
       , Line "data TestEnum = "
       , Indent $ Sequence $ S.fromList
-        [Line "  TestTestEnumFoo",
-         Line "| TestTestEnumBar"
+        [Line "  TestEnumFoo",
+         Line "| TestEnumBar"
         ]
       , Line ""
       , Line "instance Enum TestEnum where"

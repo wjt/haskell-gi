@@ -1,7 +1,7 @@
 
 module GI.API
     ( API(..)
-    , Named(..)
+    , Name(..)
     , Constant(..)
     , Arg(..)
     , Callable(..)
@@ -37,41 +37,41 @@ import GI.Internal.UnionInfo
 import GI.Type
 import GI.Value
 
-data Named a = Named { namespace :: String, name :: String, named :: a }
+data Name = Name { namespace :: String, name :: String }
     deriving Show
 
-toNamed :: BaseInfoClass bi => bi -> a -> Named a
-toNamed bi x =
+getName :: BaseInfoClass bi => bi -> Name
+getName bi =
    let namespace = baseInfoNamespace $ baseInfo bi
        name = baseInfoName $ baseInfo bi
-    in Named namespace name x
+    in Name namespace name
 
 data Constant = Constant {
     constValue :: Value }
     deriving Show
 
-toConstant :: ConstantInfo -> Named Constant
+toConstant :: ConstantInfo -> Constant
 toConstant ci =
     let typeInfo = constantInfoType ci
         arg = constantInfoValue ci
         value = fromArgument typeInfo arg
-     in toNamed ci $ Constant value
+     in Constant value
 
 data Enumeration = Enumeration {
     enumValues :: [(String, Word64)] }
     deriving Show
 
-toEnumeration :: EnumInfo -> Named Enumeration
-toEnumeration ei = toNamed ei $ Enumeration $
+toEnumeration :: EnumInfo -> Enumeration
+toEnumeration ei = Enumeration $
     (map (\vi -> (baseInfoName . baseInfo $ vi, valueInfoValue vi))
         (enumInfoValues ei))
 
 data Flags = Flags Enumeration
     deriving Show
 
-toFlags :: EnumInfo -> Named Flags
-toFlags ei = let Named ns n x = toEnumeration ei
-              in Named ns n (Flags x)
+toFlags :: EnumInfo -> Flags
+toFlags ei = let enum = toEnumeration ei
+              in Flags enum
 
 data Arg = Arg {
     argName :: String,
@@ -97,12 +97,12 @@ data Callable = Callable {
     args :: [Arg] }
     deriving Show
 
-toCallable :: CallableInfo -> Named Callable
+toCallable :: CallableInfo -> Callable
 toCallable ci =
     let returnType = callableInfoReturnType ci
         argType = typeFromTypeInfo returnType
         ais = callableInfoArgs ci
-        in toNamed ci $ Callable argType
+        in Callable argType
                (callableInfoMayReturnNull ci)
                (callableInfoCallerOwns ci)
                (callableInfoReturnAttributes ci)
@@ -110,7 +110,7 @@ toCallable ci =
 
 data Function = Function {
     fnSymbol :: String,
-    fnCallable :: Named Callable }
+    fnCallable :: Callable }
     deriving Show
 
 toFunction :: FunctionInfo -> Function
@@ -152,8 +152,8 @@ data Struct = Struct {
     fields :: [Field] }
     deriving Show
 
-toStruct :: StructInfo -> Named Struct
-toStruct si = toNamed si $ Struct (map toField $ structInfoFields si)
+toStruct :: StructInfo -> Struct
+toStruct si = Struct $ map toField $ structInfoFields si
 
 -- XXX: Capture alignment and method info.
 
@@ -161,24 +161,29 @@ data Union = Union {
     unionFields :: [Field] }
     deriving Show
 
-toUnion :: UnionInfo -> Named Union
-toUnion ui =
-    toNamed ui $ Union (map toField $ unionInfoFields ui)
+toUnion :: UnionInfo -> Union
+toUnion ui = Union $ map toField $ unionInfoFields ui
 
-data Callback = Callback (Named Callable)
+-- XXX
+data Callback = Callback Callable
     deriving Show
 
+toCallback = Callback . toCallable
+
 data Interface = Interface {
-    ifMethods :: [Function],
-    ifConstants :: [Named Constant],
+    ifMethods :: [(Name, Function)],
+    ifConstants :: [(Name, Constant)],
     ifProperties :: [Property] }
     deriving Show
 
-toInterface :: InterfaceInfo -> Named Interface
-toInterface ii =
-    toNamed ii $ Interface
-        (map toFunction $ interfaceInfoMethods $ ii)
-        (map toConstant $ interfaceInfoConstants $ ii)
+toInterface :: InterfaceInfo -> Interface
+toInterface ii = Interface
+        (map
+         (\mi -> (getName mi, toFunction mi)) $
+         interfaceInfoMethods $ ii)
+        (map
+         (\ci -> (getName ci, toConstant ci)) $
+         interfaceInfoConstants ii)
         (map toProperty $ interfaceInfoProperties $ ii)
 
 data Object = Object {
@@ -188,52 +193,46 @@ data Object = Object {
     objProperties :: [Property] }
     deriving Show
 
-toObject :: ObjectInfo -> Named Object
-toObject oi =
-    toNamed oi $ Object
+toObject :: ObjectInfo -> Object
+toObject oi = Object
         (map toField $ objectInfoFields oi)
         (map toFunction $ objectInfoMethods oi)
         (map toProperty $ objectInfoProperties oi)
 
 data API
-    = APIConst (Named Constant)
+    = APIConst Constant
     | APIFunction Function
     | APICallback Callback
     -- XXX: These plus APIUnion should have their gTypes exposed (via a
     -- binding of GIRegisteredTypeInfo.
-    | APIEnum (Named Enumeration)
-    | APIFlags (Named Flags)
-    | APIInterface (Named Interface)
-    | APIObject (Named Object)
-    | APIStruct (Named Struct)
-    | APIUnion (Named Union)
+    | APIEnum Enumeration
+    | APIFlags Flags
+    | APIInterface Interface
+    | APIObject Object
+    | APIStruct Struct
+    | APIUnion Union
     deriving Show
 
-toAPI :: BaseInfoClass bi => bi -> API
-toAPI i = toInfo' (baseInfoType i) (baseInfo i)
+toAPI :: BaseInfoClass bi => bi -> (Name, API)
+toAPI i = (getName bi, toAPI' (baseInfoType i) bi)
     where
 
-    toInfo' InfoTypeConstant =
-        APIConst . toConstant . fromBaseInfo
-    toInfo' InfoTypeEnum =
-        APIEnum . toEnumeration . fromBaseInfo
-    toInfo' InfoTypeFlags =
-        APIFlags . toFlags . fromBaseInfo
-    toInfo' InfoTypeFunction =
-        APIFunction . toFunction . fromBaseInfo
-    toInfo' InfoTypeCallback =
-        APICallback . Callback . toCallable . fromBaseInfo
-    toInfo' InfoTypeStruct =
-        APIStruct . toStruct . fromBaseInfo
-    toInfo' InfoTypeUnion =
-        APIUnion . toUnion . fromBaseInfo
-    toInfo' InfoTypeObject =
-        APIObject . toObject . fromBaseInfo
-    toInfo' InfoTypeInterface =
-        APIInterface . toInterface . fromBaseInfo
-    toInfo' it = error $ "not expecting a " ++ show it
+    bi = baseInfo i
 
-loadAPI :: String -> IO [API]
+    toAPI' InfoTypeConstant = convert APIConst toConstant
+    toAPI' InfoTypeEnum = convert APIEnum toEnumeration
+    toAPI' InfoTypeFlags = convert APIFlags toFlags
+    toAPI' InfoTypeFunction = convert APIFunction toFunction
+    toAPI' InfoTypeCallback = convert APICallback toCallback
+    toAPI' InfoTypeStruct = convert APIStruct toStruct
+    toAPI' InfoTypeUnion = convert APIUnion toUnion
+    toAPI' InfoTypeObject = convert APIObject toObject
+    toAPI' InfoTypeInterface = convert APIInterface toInterface
+    toAPI' it = error $ "not expecting a " ++ show it
+
+    convert fa fb bi = fa $ fb $ fromBaseInfo bi
+
+loadAPI :: String -> IO [(Name, API)]
 loadAPI name = do
     lib <- load name Nothing
     infos <- getInfos lib

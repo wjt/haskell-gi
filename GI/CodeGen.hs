@@ -60,7 +60,7 @@ getPrefix ns = do
         Nothing -> error $
             "no prefix defined for namespace " ++ show ns
 
-lowerName (Named ns s _) = do
+lowerName (Name ns s) = do
     cfg <- config
 
     case M.lookup s (names cfg) of
@@ -81,7 +81,7 @@ lowerName (Named ns s _) = do
           ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
-upperName (Named ns s _) = do
+upperName (Name ns s) = do
     cfg <- config
 
     case M.lookup s (names cfg) of
@@ -116,8 +116,8 @@ mkLet name value = line $ "let " ++ name ++ " = " ++ value
 
 mkBind name value = line $ name ++ " <- " ++ value
 
-genConstant :: Named Constant -> CodeGen ()
-genConstant n@(Named _ name (Constant value)) = do
+genConstant :: Name -> Constant -> CodeGen ()
+genConstant n@(Name _ name) (Constant value) = do
     name' <- lowerName n
     ht <- haskellType' $ valueType value
     line $ "-- constant " ++ name
@@ -158,8 +158,8 @@ hToF arg = do
     hToF' hType fType = error $
         "don't know how to convert " ++ hType ++ " to " ++ fType
 
-genCallable :: String -> Named Callable -> CodeGen ()
-genCallable symbol n@(Named _ _ callable) = do
+genCallable :: Name -> String -> Callable -> CodeGen ()
+genCallable n symbol callable = do
     foreignImport symbol callable
     wrapper
 
@@ -225,34 +225,31 @@ genCallable symbol n@(Named _ _ callable) = do
             maybeType = "Maybe" `con` [justType]
         return $ if returnMayBeNull callable then maybeType else justType
 
-genFunction :: Function -> CodeGen ()
-genFunction (Function symbol callable) = do
+genFunction :: Name -> Function -> CodeGen ()
+genFunction n (Function symbol callable) = do
   line $ "-- function " ++ symbol
-  genCallable symbol callable
+  genCallable n symbol callable
 
-genStruct :: (Named Struct) -> CodeGen ()
-genStruct n@(Named _ name (Struct _fields)) = do
+genStruct :: Name -> Struct -> CodeGen ()
+genStruct n@(Name _ name) (Struct _fields) = do
   line $ "-- struct " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr " ++ name' ++ ")"
   -- XXX: Generate code for fields.
 
-genEnum :: Named Enumeration -> CodeGen ()
-genEnum n@(Named ns name (Enumeration fields)) = do
+genEnum :: Name -> Enumeration -> CodeGen ()
+genEnum n@(Name ns name) (Enumeration fields) = do
   line $ "-- enum " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = "
   fields' <- forM fields $ \(fieldName, value) -> do
-    n <- upperName (Named ns (name ++ "_" ++ fieldName) ())
+    n <- upperName $ Name ns (name ++ "_" ++ fieldName)
     return (n, value)
   indent $ do
     case fields' of
       ((fieldName, _value):fs) -> do
-        n' <- upperName (Named ns fieldName Nothing)
-        line $ "  " ++ n'
-        forM_ fs $ \(n, _v) -> do
-          n' <- upperName (Named ns n Nothing)
-          line $ "| " ++ n'
+        line $ "  " ++ fieldName
+        forM_ fs $ \(n, _) -> line $ "| " ++ n
       _ -> return()
   blank
   line $ "instance Enum " ++ name' ++ " where"
@@ -263,30 +260,32 @@ genEnum n@(Named ns name (Enumeration fields)) = do
   indent $ forM_ fields' $ \(n, v) ->
     line $ "toEnum " ++ show v ++ " = " ++ n
 
-genFlags :: Named Flags -> CodeGen ()
-genFlags n@(Named _ name (Flags (Enumeration _fields))) = do
+genFlags :: Name -> Flags -> CodeGen ()
+genFlags n@(Name _ name) (Flags (Enumeration _fields)) = do
   line $ "-- flags " ++ name
   name' <- upperName n
   line $ "data " ++ name' ++ " = " ++ name'
   -- XXX: Generate code for fields.
 
-genCallback :: Callback -> CodeGen ()
-genCallback (Callback n@(Named _ _ _)) = do
+genCallback :: Name -> Callback -> CodeGen ()
+genCallback n _ = do
   name' <- upperName n
   line $ "-- callback " ++ name' ++ " "
   -- XXX
   line $ "type " ++ name' ++ " = () -> ()"
 
-genCode :: API -> CodeGen ()
-genCode (APIConst c) = genConstant c >> blank
-genCode (APIFunction f) = genFunction f >> blank
-genCode (APIEnum e) = genEnum e >> blank
-genCode (APIFlags f) = genFlags f >> blank
-genCode (APICallback c) = genCallback c >> blank
-genCode (APIStruct s) = genStruct s >> blank
-genCode a = error $ "can't generate code for " ++ show a
+genCode :: Name -> API -> CodeGen ()
+genCode n (APIConst c) = genConstant n c >> blank
+genCode n (APIFunction f) = genFunction n f >> blank
+genCode n (APIEnum e) = genEnum n e >> blank
+genCode n (APIFlags f) = genFlags n f >> blank
+genCode n (APICallback c) = genCallback n c >> blank
+genCode n (APIStruct s) = genStruct n s >> blank
+-- XXX
+genCode _ (APIUnion _) = blank
+genCode _ a = error $ "can't generate code for " ++ show a
 
-genModule :: String -> [API] -> CodeGen ()
+genModule :: String -> [(Name, API)] -> CodeGen ()
 genModule name apis = do
     line $ "-- Generated code."
     blank
@@ -301,7 +300,8 @@ genModule name apis = do
     line $ "import Foreign.C"
     blank
     cfg <- config
-    let (imports, rest) = splitImports $ runCodeGen' cfg $ forM_ apis genCode
+    let (imports, rest) =
+          splitImports $ runCodeGen' cfg $ forM_ apis (uncurry genCode)
     mapM_ (\c -> tell c >> blank) imports
     mapM_ tell rest
 
