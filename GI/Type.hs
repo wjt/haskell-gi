@@ -129,10 +129,11 @@ haskellType TError = "GError" `con` []
 -- the final name.
 haskellType (TInterface _ns s) = s `con` []
 
-foreignBasicType TBoolean = "CInt" `con` []
-foreignBasicType TUTF8    = "CString" `con` []
-foreignBasicType TGType   = "GType" `con` []
-foreignBasicType t        = haskellBasicType t
+foreignBasicType TBoolean  = "CInt" `con` []
+foreignBasicType TUTF8     = "CString" `con` []
+foreignBasicType TGType    = "GType" `con` []
+foreignBasicType TFileName = "CString" `con` []
+foreignBasicType t         = haskellBasicType t
 
 foreignType :: Type -> TypeRep
 foreignType (TBasicType t) = foreignBasicType t
