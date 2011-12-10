@@ -38,6 +38,8 @@ data BasicType
      | TFileName
     deriving (Eq, Enum, Show)
 
+-- This type represents the types found in GObject-Introspection
+-- interfaces: the types of constants, arguments, etc.
 data Type
     = TBasicType BasicType
     | TArray Type
@@ -99,7 +101,7 @@ io t = "IO" `con` [t]
 ptr :: TypeRep -> TypeRep
 ptr t = "Ptr" `con` [t]
 
-haskellBasicType TVoid     = typeOf ()
+haskellBasicType TVoid     = (ptr (typeOf ()))
 haskellBasicType TBoolean  = typeOf True
 haskellBasicType TInt8     = typeOf (0 :: Int8)
 haskellBasicType TUInt8    = typeOf (0 :: Word8)
@@ -117,6 +119,7 @@ haskellBasicType TDouble   = typeOf (0 :: Double)
 haskellBasicType TUniChar  = typeOf ('\0' :: Char)
 haskellBasicType TFileName = typeOf ""
 
+-- This translates GI types to the types used for generated Haskell code.
 haskellType :: Type -> TypeRep
 haskellType (TBasicType bt) = haskellBasicType bt
 haskellType (TArray a) = "GArray" `con` [haskellType a]
@@ -125,21 +128,23 @@ haskellType (TGSList a) = "GSList" `con` [haskellType a]
 haskellType (TGHash a b) = "GHashTable" `con` [haskellType a, haskellType b]
 haskellType TError = "GError" `con` []
 -- We assume that any name qualification (e.g. "Checksum" ->
--- "GChecksum") has been done already, and that the interface name is
--- the final name.
+-- "GChecksum") has been done already, and that the interface's name
+-- (i.e. ignoring the namespace) is the final name.
 haskellType (TInterface _ns s) = s `con` []
 
+foreignBasicType TVoid     = ptr (typeOf ())
 foreignBasicType TBoolean  = "CInt" `con` []
 foreignBasicType TUTF8     = "CString" `con` []
 foreignBasicType TGType    = "GType" `con` []
 foreignBasicType TFileName = "CString" `con` []
 foreignBasicType t         = haskellBasicType t
 
+-- This translates GI types to the types used in foreign function calls.
 foreignType :: Type -> TypeRep
 foreignType (TBasicType t) = foreignBasicType t
-foreignType t@(TArray _ ) = haskellType t
-foreignType t@(TGList _) = haskellType t
-foreignType t@(TGSList _) = haskellType t
-foreignType t@(TGHash _ _) = haskellType t
-foreignType t@TError = haskellType t
-foreignType t@(TInterface _ _) = haskellType t
+foreignType t@(TArray _) = ptr (haskellType t)
+foreignType t@(TGList _) = ptr (haskellType t)
+foreignType t@(TGSList _) = ptr (haskellType t)
+foreignType t@(TGHash _ _) = ptr (haskellType t)
+foreignType t@TError = ptr (haskellType t)
+foreignType t@(TInterface _ _) = ptr (haskellType t)
