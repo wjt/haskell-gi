@@ -6,7 +6,7 @@ module GI.CodeGen
     , genModule
     ) where
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<*>))
 import Control.Monad (forM, forM_)
 import Control.Monad.Writer (tell)
 import Data.Char (toLower, toUpper)
@@ -98,17 +98,23 @@ upperName (Name ns s) = do
           ucFirst' "" = "_"
           ucFirst' x = ucFirst x
 
-haskellType' :: Type -> CodeGen TypeRep
-haskellType' (TInterface ns n) = do
+mapPrefixes :: Type -> CodeGen Type
+mapPrefixes t@(TBasicType _) = return t
+mapPrefixes (TArray t) = TArray <$> mapPrefixes t
+mapPrefixes (TGList t) = TGList <$> mapPrefixes t
+mapPrefixes (TGSList t) = TGSList <$> mapPrefixes t
+mapPrefixes (TGHash ta tb) =
+  TGHash <$> mapPrefixes ta <*> mapPrefixes tb
+mapPrefixes t@TError = return t
+mapPrefixes (TInterface ns s) = do
     prefix <- getPrefix ns
-    return $ haskellType (TInterface "!!!" (ucFirst prefix ++ n))
-haskellType' t = return $ haskellType t
+    return $ TInterface undefined (ucFirst prefix ++ s)
+
+haskellType' :: Type -> CodeGen TypeRep
+haskellType' t = haskellType <$> mapPrefixes t
 
 foreignType' :: Type -> CodeGen TypeRep
-foreignType' (TInterface ns n) = do
-    prefix <- getPrefix ns
-    return $ foreignType (TInterface undefined (ucFirst prefix ++ n))
-foreignType' t = return $ foreignType t
+foreignType' t = foreignType <$> mapPrefixes t
 
 prime = (++ "'")
 

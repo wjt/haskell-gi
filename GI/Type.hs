@@ -124,10 +124,10 @@ haskellType (TGList a) = "GList" `con` [haskellType a]
 haskellType (TGSList a) = "GSList" `con` [haskellType a]
 haskellType (TGHash a b) = "GHashTable" `con` [haskellType a, haskellType b]
 haskellType TError = "GError" `con` []
--- XXX: Possibly nonsense. Perhaps the interface name needs to be
--- qualified, and its existence (in the typelib we're generating code
--- for, or some other typelib) verified.
-haskellType (TInterface _ s) = s `con` []
+-- We assume that any name qualification (e.g. "Checksum" ->
+-- "GChecksum") has been done already, and that the interface name is
+-- the final name.
+haskellType (TInterface _ns s) = s `con` []
 
 foreignBasicType TBoolean = "CInt" `con` []
 foreignBasicType TUTF8    = "CString" `con` []
