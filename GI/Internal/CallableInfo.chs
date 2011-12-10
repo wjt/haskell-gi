@@ -40,13 +40,14 @@ callableInfoReturnAttributes :: CallableInfoClass call => call -> [(String, Stri
 callableInfoReturnAttributes ci = unsafePerformIO $ do
     allocaBytes {# sizeof GIAttributeIter #} $ \iter -> do
         zero {# sizeof GIAttributeIter #} (castPtr iter)
-        loop iter []
+        loop (castPtr iter) []
 
     where -- XXX: There's probably a simpler way to do this.
           zero :: Int -> Ptr Word8 -> IO ()
           zero 0 _ = return ()
           zero n p = poke p 0 >> zero (n - 1) (plusPtr p 1)
 
+          loop :: Ptr a -> [(String, String)] -> IO [(String, String)]
           loop iter acc = do
               name <- new nullPtr
               value <- new nullPtr
