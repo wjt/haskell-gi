@@ -48,22 +48,22 @@ testFunction = testCase "function" $
       [ Line "foreign import ccall \"foo_bar\" foo_bar :: "
       , Indent $ Sequence $ S.fromList
         [ Line "Int8 ->                                 -- x"
-        , Line "IO ()"
+        , Line "IO (Ptr ())"
         ]
       ]
   , Tag TypeDecl $ Sequence $ S.fromList
       [ Line "testFooBar ::"
       , Indent $ Sequence $ S.fromList
         [ Line "Int8 ->                                 -- x"
-        , Line "IO ()"
+        , Line "IO (Ptr ())"
         ]
       ]
   , Tag Decl $ Line "testFooBar x = do"
   , Indent $ Sequence $ S.fromList
     [ Line "let x' = id x"
     , Line "result <- foo_bar x'"
-    , Line "let result' = result"
-    , Line "return ()"
+    , Line "let result' = id result"
+    , Line "return result'"
     ]
   , Line ""
   ]
