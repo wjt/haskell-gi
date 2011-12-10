@@ -8,8 +8,6 @@ module GI.Internal.TypeInfo
     , typeInfoArrayLength
     , typeInfoArrayFixedSize
     , typeInfoIsZeroTerminated
-    , typeInfoNErrorDomains
-    , typeInfoErrorDomain
     , typeInfoArrayType
     , typeTagToString
     )
@@ -61,14 +59,6 @@ typeInfoArrayFixedSize ti = unsafePerformIO $ fromIntegral <$>
 typeInfoIsZeroTerminated :: TypeInfoClass tic => tic -> Bool
 typeInfoIsZeroTerminated ti = unsafePerformIO $ (/= 0) <$>
     {# call is_zero_terminated #} (stupidCast ti)
-
-typeInfoNErrorDomains :: TypeInfoClass tic => tic -> Int
-typeInfoNErrorDomains ti = unsafePerformIO $ fromIntegral <$>
-    {# call get_n_error_domains #} (stupidCast ti)
-
-typeInfoErrorDomain :: TypeInfoClass tic => tic -> Int -> ErrorDomainInfo
-typeInfoErrorDomain ti n = unsafePerformIO $ ErrorDomainInfo <$> castPtr <$>
-    {# call get_error_domain #} (stupidCast ti) (fromIntegral n)
 
 typeInfoArrayType :: TypeInfoClass tic => tic -> ArrayType
 typeInfoArrayType ti = unsafePerformIO $ toEnum <$> fromIntegral <$>
