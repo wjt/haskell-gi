@@ -156,7 +156,7 @@ hToF arg = do
     where
     name = escapeReserved $ argName arg
     mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
-    mkBind' conv = mkBind (prime name) (conv ++ " `fmap` " ++ name)
+    mkBind' conv = mkBind (prime name) (conv ++ " " ++ name)
     hToF' "[Char]" "CString" = mkBind' "newCString"
     hToF' "Word"   "GType"   = mkLet' "fromIntegral"
     hToF' "Bool"   "CInt"    = mkLet' "fromEnum"
