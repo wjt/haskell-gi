@@ -115,17 +115,18 @@ haskellType' t = haskellType <$> mapPrefixes t
 
 foreignType' :: Type -> CodeGen TypeRep
 foreignType' t = do
-  isEnum <- getIsEnum
-  if isEnum
-     -- Enum values are represented by machine words.
+  isScalar <- getIsScalar
+  if isScalar
+     -- Enum and flag values are represented by machine words.
     then return $ "Word" `con` []
     else foreignType <$> mapPrefixes t
 
-  where getIsEnum = do
+  where getIsScalar = do
           a <- findInput (show $ haskellType t)
           case a of
             Nothing -> return False
             (Just (APIEnum _)) -> return True
+            (Just (APIFlags _)) -> return True
             _ -> return False
 
 prime = (++ "'")
@@ -153,7 +154,11 @@ foreignImport symbol callable = tag Import $ do
                 symbol ++ " :: "
     fArgStr arg = do
         ft <- foreignType' $ argType arg
-        let start = show ft ++ " -> "
+        let ft' = case direction arg of
+              DirectionInout -> ptr ft
+              DirectionOut -> ptr ft
+              DirectionIn -> ft
+        let start = show ft' ++ " -> "
         return $ padTo 40 start ++ "-- " ++ argName arg
     last = show <$> io <$> foreignType' (returnType callable)
 
@@ -182,6 +187,9 @@ hToF arg = do
          Just (APIEnum _) -> do
            mkLet' "(fromIntegral . fromEnum)"
            return True
+         Just (APIFlags _) -> do
+           mkLet' "fromIntegral"
+           return True
          _ -> return False
     name = escapeReserved $ argName arg
     mkLet' conv = mkLet (prime name) (conv ++ " " ++ name)
@@ -193,8 +201,8 @@ hToF arg = do
     hToF' hType fType = error $
         "don't know how to convert " ++ hType ++ " to " ++ fType
 
-fToH :: Type -> CodeGen ()
-fToH t = do
+fToH :: Type -> String -> String -> CodeGen ()
+fToH t n1 n2 = do
     hType <- haskellType' t
     fType <- foreignType' t
     if hType == fType
@@ -215,12 +223,13 @@ fToH t = do
          Just (APIEnum _) -> do
            mkLet' "(toEnum . fromIntegral)"
            return True
+         Just (APIFlags _) -> do
+           mkLet' "fromIntegral"
+           return True
          _ -> return False
     -- XXX: hardcoded names
-    a1 = "result'"
-    a2 = "result"
-    mkLet' conv = mkLet a1 (conv ++ " " ++ a2)
-    mkBind' conv = mkBind a1 (conv ++ " " ++ a2)
+    mkLet' conv = mkLet n1 (conv ++ " " ++ n2)
+    mkBind' conv = mkBind n1 (conv ++ " " ++ n2)
     fToH' "CString" "[Char]" = mkBind' "peekCString"
     fToH' "GType" "Word" = mkLet' "fromIntegral"
     fToH' "CInt" "Bool" = mkLet' "(/= 0)"
@@ -265,7 +274,7 @@ genCallable n symbol callable = do
     -- XXX: Check argument transfer.
     convertOut = do
         -- Convert return value.
-        fToH (returnType callable)
+        fToH (returnType callable) "result'" "result"
         -- XXX: Do proper conversion of out parameters.
         forM_ outArgs $ \arg ->
             if direction arg == DirectionIn
@@ -273,7 +282,9 @@ genCallable n symbol callable = do
                 else do
                     mkBind (prime $ prime $ argName arg) $
                         "peek " ++ (prime $ argName arg)
-        let pps = map (prime . prime . argName) outArgs
+                    fToH (argType arg) (prime $ prime $ prime $ argName arg)
+                      (prime $ prime $ argName arg)
+        let pps = map (prime . prime . prime . argName) outArgs
         out <- outType
         case (show out, outArgs) of
             ("()", []) -> line $ "return ()"
@@ -334,15 +345,17 @@ genFlags :: Name -> Flags -> CodeGen ()
 genFlags n@(Name _ name) (Flags (Enumeration _fields)) = do
   line $ "-- flags " ++ name
   name' <- upperName n
-  line $ "data " ++ name' ++ " = " ++ name'
   -- XXX: Generate code for fields.
+  -- XXX: We should generate code for converting to/from lists.
+  line $ "type " ++ name' ++ " = Word"
 
 genCallback :: Name -> Callback -> CodeGen ()
 genCallback n _ = do
   name' <- upperName n
   line $ "-- callback " ++ name' ++ " "
   -- XXX
-  line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr (IO ()))"
+  --line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr (IO ()))"
+  line $ "data " ++ name' ++ " = " ++ name' ++ " (Ptr " ++ name' ++ ")"
 
 genCode :: Name -> API -> CodeGen ()
 genCode n (APIConst c) = genConstant n c >> blank
@@ -354,6 +367,12 @@ genCode n (APIStruct s) = genStruct n s >> blank
 -- XXX
 genCode _ (APIUnion _) = blank
 genCode _ a = error $ "can't generate code for " ++ show a
+
+gLibBootstrap = do
+    line "type GType = Word"
+    line "data GArray a = GArray (Ptr (GArray a))"
+    line "data GHashTable a b = GHashTable (Ptr (GHashTable a b))"
+    blank
 
 genModule :: String -> [(Name, API)] -> CodeGen ()
 genModule name apis = do
@@ -370,8 +389,14 @@ genModule name apis = do
     line $ "import Foreign.C"
     blank
     cfg <- config
-    let (imports, rest) =
-          splitImports $ runCodeGen' cfg $ forM_ apis (uncurry genCode)
+    let (imports, rest_) =
+          splitImports $ runCodeGen' cfg $
+          forM_ (filter ((/= "dummy_decl") . GI.API.name . fst) apis)
+          (uncurry genCode)
+    -- GLib bootstrapping hacks.
+    let rest = case name of
+          "GLib" -> (runCodeGen' cfg $ gLibBootstrap) : rest_
+          _ -> rest_
     mapM_ (\c -> tell c >> blank) imports
     mapM_ tell rest
 
